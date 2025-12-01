@@ -3,6 +3,7 @@ import path from 'node:path'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { useState } from 'react'
+import { CodeHighlight } from '../components/CodeHighlight'
 import { getSolver } from '../solvers'
 
 const runSolverFn = createServerFn({ method: 'POST' })
@@ -147,23 +148,29 @@ function SolvePage() {
           </button>
         </div>
 
+        {result !== null && (
+          <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-8 mb-6">
+            <h2 className="text-2xl font-bold text-white mb-4">Result:</h2>
+            <CodeHighlight
+              code={result}
+              language="source.ts"
+              showLineNumbers
+              className="bg-[#1e1e1e]"
+            />
+          </div>
+        )}
+
         {solverCode && (
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-8 mb-6">
             <h2 className="text-2xl font-bold text-white mb-4">
               Solver Code ({`src/solvers/day${day.padStart(2, '0')}.ts`}):
             </h2>
-            <pre className="text-gray-200 font-mono text-sm overflow-x-auto bg-slate-900/50 p-4 rounded border border-slate-700">
-              <code>{solverCode}</code>
-            </pre>
-          </div>
-        )}
-
-        {result !== null && (
-          <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-8 mb-6">
-            <h2 className="text-2xl font-bold text-white mb-4">Result:</h2>
-            <pre className="text-gray-300 font-mono text-sm whitespace-pre-wrap break-words bg-slate-900/50 p-4 rounded border border-slate-700">
-              {result}
-            </pre>
+            <CodeHighlight
+              code={solverCode}
+              language="source.ts"
+              showLineNumbers
+              className="bg-[#1e1e1e]"
+            />
           </div>
         )}
 
@@ -179,8 +186,8 @@ function SolvePage() {
               </code>{' '}
               with the following structure:
             </p>
-            <pre className="bg-slate-900/50 p-4 rounded border border-slate-700 text-sm overflow-x-auto">
-              {`export async function solve(input: string): Promise<string | number | object> {
+            <CodeHighlight
+              code={`export async function solve(input: string): Promise<string | number | object> {
   // Your solution here
   // The input parameter contains the puzzle input as a string
   
@@ -190,20 +197,26 @@ function SolvePage() {
   // Process and return your answer
   return 'Your answer here';
 }`}
-            </pre>
+              language="source.ts"
+              showLineNumbers
+              className="bg-[#1e1e1e]"
+            />
             <p className="mt-4">
               Then, import it in{' '}
               <code className="text-cyan-400">src/solvers/index.ts</code> and
               add it to the solvers object:
             </p>
-            <pre className="bg-slate-900/50 p-4 rounded border border-slate-700 text-sm overflow-x-auto mt-2">
-              {`import * as day${day.padStart(2, '0')} from './day${day.padStart(2, '0')}'
+            <CodeHighlight
+              code={`import * as day${day.padStart(2, '0')} from './day${day.padStart(2, '0')}'
 
 export const solvers = {
   // ... existing solvers
   '${day.padStart(2, '0')}': day${day.padStart(2, '0')},
 }`}
-            </pre>
+              language="source.ts"
+              showLineNumbers
+              className="bg-[#1e1e1e]"
+            />
             <p className="mt-4">
               The solver function will receive the puzzle input as a string and
               should return the solution (string, number, or object).
