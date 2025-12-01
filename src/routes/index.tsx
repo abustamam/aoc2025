@@ -1,11 +1,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { Github } from 'lucide-react'
 
 export const Route = createFileRoute('/')({
   component: App,
   loader: async () => {
-    const days = []
+    const days: Array<{ day: string; exists: boolean }> = []
     const inputsDir = path.join(process.cwd(), 'src', 'inputs')
 
     // Check which days exist (01-12)
@@ -32,7 +33,17 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 relative">
+          <a
+            href="https://github.com/abustamam/aoc2025"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute top-0 right-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800/50 border border-slate-700 hover:border-cyan-500/50 hover:bg-slate-800/70 transition-all duration-300 text-gray-300 hover:text-cyan-400"
+            aria-label="View on GitHub"
+          >
+            <Github className="w-5 h-5" />
+            <span className="text-sm font-medium">GitHub</span>
+          </a>
           <h1 className="text-5xl md:text-6xl font-black text-white mb-4 [letter-spacing:-0.08em]">
             <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
               Advent of Code 2025
@@ -44,7 +55,7 @@ function App() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {days.map(({ day, exists }) => (
+          {days.map(({ day, exists }: { day: string; exists: boolean }) => (
             <Link
               key={day}
               to="/puzzle/$day"

@@ -29,6 +29,8 @@ RUN bun install --frozen-lockfile
 # Copy built application from builder
 COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/public ./public
+# Copy source files needed at runtime (solvers and inputs)
+COPY --from=builder /app/src ./src
 
 # Expose port
 EXPOSE 3000

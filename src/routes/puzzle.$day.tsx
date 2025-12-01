@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { Outlet, createFileRoute } from '@tanstack/react-router'
 import ReactMarkdown from 'react-markdown'
+import { Github } from 'lucide-react'
 
 export const Route = createFileRoute('/puzzle/$day')({
   component: PuzzlePage,
@@ -30,7 +31,17 @@ function PuzzlePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
+        <div className="mb-6 relative">
+          <a
+            href="https://github.com/abustamam/aoc2025"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute top-0 right-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800/50 border border-slate-700 hover:border-cyan-500/50 hover:bg-slate-800/70 transition-all duration-300 text-gray-300 hover:text-cyan-400"
+            aria-label="View on GitHub"
+          >
+            <Github className="w-5 h-5" />
+            <span className="text-sm font-medium">GitHub</span>
+          </a>
           <Outlet />
           <h1 className="text-4xl font-bold text-white mb-2">
             Day {day} - Advent of Code 2025

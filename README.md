@@ -1,5 +1,7 @@
 # Advent of Code 2025
 
+[![GitHub](https://img.shields.io/badge/GitHub-abustamam%2Faoc2025-blue)](https://github.com/abustamam/aoc2025)
+
 A web application for solving and tracking [Advent of Code](https://adventofcode.com/2025) puzzles, built with [TanStack Start](https://tanstack.com/start/latest).
 
 ## About
@@ -165,6 +167,7 @@ src/
 
 ## Links
 
+- [GitHub Repository](https://github.com/abustamam/aoc2025)
 - [Advent of Code 2025](https://adventofcode.com/2025)
 - [aoc-cli](https://github.com/scarvalhojr/aoc-cli) - Command-line tool for downloading puzzles
 - [TanStack Start Documentation](https://tanstack.com/start/latest)
