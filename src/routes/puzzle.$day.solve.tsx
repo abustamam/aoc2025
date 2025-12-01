@@ -10,13 +10,20 @@ const runSolverFn = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const { day, input } = data
     try {
+      const dayPadded = day.padStart(2, '0')
       const solver = getSolver(day)
       if (!solver) {
         throw new Error(
-          `Solver not found for day ${day}.\n\n` +
+          `Solver not found for day ${day} (padded: ${dayPadded}).\n\n` +
             `To add a solver:\n` +
-            `1. Create src/solvers/day${day.padStart(2, '0')}.ts with a solve function\n` +
+            `1. Create src/solvers/day${dayPadded}.ts with a solve function\n` +
             `2. Import it in src/solvers/index.ts and add it to the solvers object`,
+        )
+      }
+
+      if (typeof solver.solve !== 'function') {
+        throw new Error(
+          `Solver for day ${day} does not have a solve function. Solver object: ${JSON.stringify(Object.keys(solver))}`,
         )
       }
 
