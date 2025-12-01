@@ -1,11 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
 import { Github } from 'lucide-react'
 
-export const Route = createFileRoute('/')({
-  component: App,
-  loader: async () => {
+const getDaysList = createServerFn({ method: 'GET' })
+  .handler(async () => {
     const days: Array<{ day: string; exists: boolean }> = []
     const inputsDir = path.join(process.cwd(), 'src', 'inputs')
 
@@ -24,6 +24,12 @@ export const Route = createFileRoute('/')({
     }
 
     return { days }
+  })
+
+export const Route = createFileRoute('/')({
+  component: App,
+  loader: async () => {
+    return await getDaysList()
   },
 })
 

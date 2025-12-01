@@ -46,10 +46,10 @@ const runSolverFn = createServerFn({ method: 'POST' })
     }
   })
 
-export const Route = createFileRoute('/puzzle/$day/solve')({
-  component: SolvePage,
-  loader: async ({ params }) => {
-    const day = params.day
+const getSolveData = createServerFn({ method: 'GET' })
+  .inputValidator((d: { day: string }) => d)
+  .handler(async ({ data }) => {
+    const { day } = data
     const dayPadded = day.padStart(2, '0')
     const inputPath = path.join(
       process.cwd(),
@@ -77,6 +77,13 @@ export const Route = createFileRoute('/puzzle/$day/solve')({
     } catch (error) {
       throw new Error(`Input file not found for day ${day}`)
     }
+  })
+
+export const Route = createFileRoute('/puzzle/$day/solve')({
+  component: SolvePage,
+  loader: async ({ params }) => {
+    const day = params.day
+    return await getSolveData({ data: { day } })
   },
 })
 

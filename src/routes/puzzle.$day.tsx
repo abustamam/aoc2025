@@ -1,13 +1,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { Outlet, createFileRoute } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
 import ReactMarkdown from 'react-markdown'
 import { Github } from 'lucide-react'
 
-export const Route = createFileRoute('/puzzle/$day')({
-  component: PuzzlePage,
-  loader: async ({ params }) => {
-    const day = params.day
+const getPuzzleContent = createServerFn({ method: 'GET' })
+  .inputValidator((d: { day: string }) => d)
+  .handler(async ({ data }) => {
+    const { day } = data
     const puzzlePath = path.join(
       process.cwd(),
       'src',
@@ -22,6 +23,13 @@ export const Route = createFileRoute('/puzzle/$day')({
     } catch (error) {
       throw new Error(`Puzzle file not found for day ${day}`)
     }
+  })
+
+export const Route = createFileRoute('/puzzle/$day')({
+  component: PuzzlePage,
+  loader: async ({ params }) => {
+    const day = params.day
+    return await getPuzzleContent({ data: { day } })
   },
 })
 
