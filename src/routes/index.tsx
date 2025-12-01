@@ -1,8 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import { Github } from 'lucide-react'
 
 const getDaysList = createServerFn({ method: 'GET' }).handler(async () => {
   const days: Array<{ day: string; exists: boolean }> = []
@@ -38,17 +37,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12 relative">
-          <a
-            href="https://github.com/abustamam/aoc2025"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="absolute top-0 right-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800/50 border border-slate-700 hover:border-cyan-500/50 hover:bg-slate-800/70 transition-all duration-300 text-gray-300 hover:text-cyan-400"
-            aria-label="View on GitHub"
-          >
-            <Github className="w-5 h-5" />
-            <span className="text-sm font-medium">GitHub</span>
-          </a>
+        <div className="text-center mb-12">
           <div className="mb-8 flex justify-center">
             <img
               src="/images/advent-of-code-2025.png"
