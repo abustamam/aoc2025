@@ -9,6 +9,7 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import appCss from '../styles.css?url'
+import { Navbar } from '../components/Navbar'
 
 import type { QueryClient } from '@tanstack/react-query'
 
@@ -28,6 +29,22 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       {
         title: 'Advent of Code 2025',
+      },
+      {
+        property: 'og:image',
+        content: '/images/advent-of-code-2025.png',
+      },
+      {
+        property: 'og:image:type',
+        content: 'image/png',
+      },
+      {
+        name: 'twitter:image',
+        content: '/images/advent-of-code-2025.png',
+      },
+      {
+        name: 'twitter:card',
+        content: 'summary_large_image',
       },
     ],
     links: [
@@ -52,6 +69,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <Navbar />
         {children}
         <TanStackDevtools
           config={{

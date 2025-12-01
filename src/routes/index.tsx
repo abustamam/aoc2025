@@ -4,27 +4,26 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { Github } from 'lucide-react'
 
-const getDaysList = createServerFn({ method: 'GET' })
-  .handler(async () => {
-    const days: Array<{ day: string; exists: boolean }> = []
-    const inputsDir = path.join(process.cwd(), 'src', 'inputs')
+const getDaysList = createServerFn({ method: 'GET' }).handler(async () => {
+  const days: Array<{ day: string; exists: boolean }> = []
+  const inputsDir = path.join(process.cwd(), 'src', 'inputs')
 
-    // Check which days exist (01-12)
-    for (let day = 1; day <= 12; day++) {
-      const dayStr = day.toString().padStart(2, '0')
-      const dayPath = path.join(inputsDir, `day${dayStr}`)
-      const inputPath = path.join(dayPath, 'input')
+  // Check which days exist (01-12)
+  for (let day = 1; day <= 12; day++) {
+    const dayStr = day.toString().padStart(2, '0')
+    const dayPath = path.join(inputsDir, `day${dayStr}`)
+    const inputPath = path.join(dayPath, 'input')
 
-      try {
-        await fs.promises.access(inputPath, fs.constants.F_OK)
-        days.push({ day: dayStr, exists: true })
-      } catch {
-        days.push({ day: dayStr, exists: false })
-      }
+    try {
+      await fs.promises.access(inputPath, fs.constants.F_OK)
+      days.push({ day: dayStr, exists: true })
+    } catch {
+      days.push({ day: dayStr, exists: false })
     }
+  }
 
-    return { days }
-  })
+  return { days }
+})
 
 export const Route = createFileRoute('/')({
   component: App,
@@ -50,14 +49,14 @@ function App() {
             <Github className="w-5 h-5" />
             <span className="text-sm font-medium">GitHub</span>
           </a>
-          <h1 className="text-5xl md:text-6xl font-black text-white mb-4 [letter-spacing:-0.08em]">
-            <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-              Advent of Code 2025
-            </span>
-          </h1>
-          <p className="text-xl text-gray-300">
-            Solve puzzles and track your progress
-          </p>
+          <div className="mb-8 flex justify-center">
+            <img
+              src="/images/advent-of-code-2025.png"
+              alt="Advent of Code 2025"
+              className="max-w-full h-auto rounded-lg shadow-2xl border border-slate-700/50"
+              style={{ maxHeight: '400px' }}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
