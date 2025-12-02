@@ -101,6 +101,24 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
           name: 'twitter:image',
           content: imageUrl,
         },
+        // Theme color for mobile browsers
+        {
+          name: 'theme-color',
+          content: '#ffffff',
+        },
+        // Apple mobile web app
+        {
+          name: 'apple-mobile-web-app-capable',
+          content: 'yes',
+        },
+        {
+          name: 'apple-mobile-web-app-status-bar-style',
+          content: 'default',
+        },
+        {
+          name: 'apple-mobile-web-app-title',
+          content: 'AoC2025',
+        },
       ],
       links: [
         {
@@ -110,6 +128,31 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         {
           rel: 'stylesheet',
           href: '/css/starry-night-dark.css',
+        },
+        // Favicons
+        {
+          rel: 'icon',
+          type: 'image/x-icon',
+          href: '/favicon/favicon.ico',
+        },
+        {
+          rel: 'icon',
+          type: 'image/svg+xml',
+          href: '/favicon/favicon.svg',
+        },
+        {
+          rel: 'icon',
+          type: 'image/png',
+          sizes: '96x96',
+          href: '/favicon/favicon-96x96.png',
+        },
+        {
+          rel: 'apple-touch-icon',
+          href: '/favicon/apple-touch-icon.png',
+        },
+        {
+          rel: 'manifest',
+          href: '/favicon/site.webmanifest',
         },
       ],
     }
