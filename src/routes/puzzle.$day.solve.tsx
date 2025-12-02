@@ -1,10 +1,20 @@
-import fs from 'node:fs'
 import path from 'node:path'
+import fs from 'node:fs'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
+import { ChevronDownIcon } from 'lucide-react'
 import { useState } from 'react'
 import { CodeHighlight } from '../components/CodeHighlight'
 import { getSolver } from '../solvers'
+
+import { Button } from '@/components/ui/button'
+import { ButtonGroup } from '@/components/ui/button-group'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 const runSolverFn = createServerFn({ method: 'POST' })
   .inputValidator((d: { day: string; input: string }) => d)
@@ -59,6 +69,13 @@ const getSolveData = createServerFn({ method: 'GET' })
       `day${dayPadded}`,
       'input',
     )
+    const testInputPath = path.join(
+      process.cwd(),
+      'src',
+      'inputs',
+      `day${dayPadded}`,
+      'test-input',
+    )
     const solverPath = path.join(
       process.cwd(),
       'src',
@@ -68,13 +85,16 @@ const getSolveData = createServerFn({ method: 'GET' })
 
     try {
       const input = await fs.promises.readFile(inputPath, 'utf-8')
+      const testInput = await fs.promises
+        .readFile(testInputPath, 'utf-8')
+        .catch(() => null)
       let solverCode: string | null = null
       try {
         solverCode = await fs.promises.readFile(solverPath, 'utf-8')
       } catch {
         // Solver file doesn't exist yet, that's okay
       }
-      return { input, day, solverCode }
+      return { input, testInput, day, solverCode }
     } catch (error) {
       throw new Error(`Input file not found for day ${day}`)
     }
@@ -89,11 +109,11 @@ export const Route = createFileRoute('/puzzle/$day/solve')({
 })
 
 function SolvePage() {
-  const { input, day, solverCode } = Route.useLoaderData()
+  const { input, testInput, day, solverCode } = Route.useLoaderData()
   const [result, setResult] = useState<string | null>(null)
   const [isRunning, setIsRunning] = useState(false)
 
-  const runSolver = async () => {
+  const runSolver = async (input: string) => {
     setIsRunning(true)
     try {
       const response = await runSolverFn({ data: { day, input } })
@@ -139,13 +159,36 @@ function SolvePage() {
         </div>
 
         <div className="mb-6">
-          <button
-            onClick={runSolver}
-            disabled={isRunning}
-            className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 disabled:bg-cyan-500/50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors shadow-lg shadow-cyan-500/50"
-          >
-            {isRunning ? 'Running...' : 'Run Solver'}
-          </button>
+          <ButtonGroup>
+            <Button
+              variant="outline"
+              onClick={() => runSolver(input)}
+              disabled={isRunning}
+            >
+              {isRunning ? 'Running...' : 'Run Solver'}
+            </Button>
+            {testInput && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Open Popover"
+                  >
+                    <ChevronDownIcon />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="rounded-xl p-0 text-sm"
+                >
+                  <DropdownMenuItem onClick={() => runSolver(testInput)}>
+                    Use test input
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </ButtonGroup>
         </div>
 
         {result !== null && (
