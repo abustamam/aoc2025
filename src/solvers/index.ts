@@ -8,6 +8,7 @@
 
 import * as day01 from './day01'
 import * as day02 from './day02'
+import * as day03 from './day03'
 
 // Add your solvers here as you create them
 export const solvers: Record<
@@ -16,9 +17,7 @@ export const solvers: Record<
 > = {
   '01': day01,
   '02': day02,
-  // Add more solvers here:
-  // '03': day03,
-  // etc.
+  '03': day03,
 }
 
 export function getSolver(
