@@ -9,6 +9,7 @@
 import * as day01 from './day01'
 import * as day02 from './day02'
 import * as day03 from './day03'
+import * as day04 from './day04'
 
 // Add your solvers here as you create them
 export const solvers: Record<
@@ -18,6 +19,7 @@ export const solvers: Record<
   '01': day01,
   '02': day02,
   '03': day03,
+  '04': day04,
 }
 
 export function getSolver(
