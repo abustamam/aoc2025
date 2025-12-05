@@ -1,0 +1,88 @@
+name: Download AOC Puzzle
+
+on:
+  schedule:
+    # Run at 5am UTC (9pm PST / 10pm PDT) - puzzles release at midnight EST
+    # This runs daily during December 1-25
+    - cron: '0 5 * 12 *'
+  workflow_dispatch:
+    inputs:
+      day:
+        description: 'Day number (1-25). Leave empty to use today.'
+        required: false
+        type: string
+      year:
+        description: 'Year (default: 2025)'
+        required: false
+        type: string
+        default: '2025'
+
+permissions:
+  contents: write
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Determine day and year
+        id: date
+        run: |
+          if [ -n "${{ github.event.inputs.day }}" ]; then
+            DAY="${{ github.event.inputs.day }}"
+          else
+            # Get current date in UTC
+            DAY=$(date -u +%d)
+            MONTH=$(date -u +%m)
+            # Only proceed if it's December 1-25
+            if [ "$MONTH" != "12" ] || [ "$DAY" -lt 1 ] || [ "$DAY" -gt 25 ]; then
+              echo "Not December 1-25, skipping..."
+              echo "skip=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+          
+          YEAR="${{ github.event.inputs.year }}"
+          if [ -z "$YEAR" ]; then
+            YEAR=$(date -u +%Y)
+          fi
+          
+          echo "day=$DAY" >> $GITHUB_OUTPUT
+          echo "year=$YEAR" >> $GITHUB_OUTPUT
+          echo "Downloading Day $DAY, Year $YEAR"
+
+      - name: Download puzzle
+        if: steps.date.outputs.skip != 'true'
+        env:
+          AOC_SESSION: ${{ secrets.AOC_SESSION }}
+        run: |
+          bun scripts/download-puzzle.ts ${{ steps.date.outputs.day }} ${{ steps.date.outputs.year }}
+
+      - name: Commit and push
+        if: steps.date.outputs.skip != 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          DAY_PADDED=$(printf "%02d" ${{ steps.date.outputs.day }})
+          git add "src/inputs/day${DAY_PADDED}/"
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-download puzzle for Day ${{ steps.date.outputs.day }}"
+            git push
+          fi
+

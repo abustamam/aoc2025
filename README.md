@@ -62,6 +62,61 @@ aoc download --input-only --input-file src/inputs/day01/input
 
 For more information on using aoc-cli, see the [aoc-cli documentation](https://github.com/scarvalhojr/aoc-cli).
 
+#### Automated Download Script
+
+This project includes a built-in script to download puzzles programmatically. This is useful for automation and GitHub Actions.
+
+**Get your session cookie:**
+1. Log in to [adventofcode.com](https://adventofcode.com)
+2. Open browser developer tools (F12)
+3. Go to Application/Storage → Cookies → `https://adventofcode.com`
+4. Copy the value of the `session` cookie
+
+**Using the script locally:**
+
+```bash
+# Set your session cookie as an environment variable
+export AOC_SESSION="your-session-cookie-here"
+
+# Download today's puzzle (if it's December 1-25)
+bun run download
+
+# Download a specific day
+bun run download 5
+
+# Download a specific day and year
+bun run download 5 2025
+```
+
+Or use the script directly:
+
+```bash
+AOC_SESSION="your-session-cookie" bun scripts/download-puzzle.ts [day] [year]
+```
+
+**Automated GitHub Actions (9pm PST / Midnight EST):**
+
+The project includes a GitHub Action workflow that automatically downloads puzzles at 9pm PST (when puzzles are released). To set it up:
+
+1. Add your AOC session cookie as a GitHub secret:
+   - Go to your repository → Settings → Secrets and variables → Actions
+   - Click "New repository secret"
+   - Name: `AOC_SESSION`
+   - Value: Your session cookie (from above)
+   - Click "Add secret"
+
+2. The workflow will automatically:
+   - Run daily at 5am UTC (9pm PST / 10pm PDT) during December
+   - Download the puzzle description and input
+   - Commit and push the files to your repository
+   - Trigger your deployment workflow (if configured)
+
+3. You can also manually trigger the workflow:
+   - Go to Actions → "Download AOC Puzzle" → "Run workflow"
+   - Optionally specify a day and year
+
+This allows you to compete in leaderboards even when you're not at your desk! The puzzle will be automatically downloaded, committed, and ready for you to solve.
+
 ### 3. Run Development Server
 
 ```bash
@@ -100,12 +155,18 @@ The app will be available at `http://localhost:3000`.
 
 ### GitHub Actions
 
-The project includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that automatically builds and publishes Docker images to GitHub Container Registry (GHCR) on pushes to the `main` branch.
+The project includes two GitHub Actions workflows:
 
-The workflow:
+**1. Deploy Workflow** (`.github/workflows/deploy.yml`)
+- Automatically builds and publishes Docker images to GitHub Container Registry (GHCR) on pushes to the `main` branch
 - Builds a multi-stage Docker image
 - Pushes to `ghcr.io/<your-username>/aoc2025:latest`
 - Also tags images with the commit SHA
+
+**2. Download Puzzle Workflow** (`.github/workflows/download-puzzle.yml`)
+- Automatically downloads puzzles at 9pm PST (5am UTC) during December
+- Commits and pushes the downloaded files
+- See the "Automated Download Script" section above for setup instructions
 
 ## Project Structure
 
@@ -135,6 +196,7 @@ src/
 - `bun run lint` - Run ESLint
 - `bun run format` - Format code with Prettier
 - `bun run check` - Format and lint (fixes issues)
+- `bun run download [day] [year]` - Download puzzle and input (requires `AOC_SESSION` env var)
 
 ### Adding a New Day
 
