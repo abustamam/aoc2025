@@ -70,7 +70,6 @@ function countFreshIngredientsFast(
 
 export function solve(input: string): Promise<string | number | object> {
   const [rangesStr, numbersStr] = input.split('\n\n')
-  let totalPt2 = 0
 
   // Filter out blank lines when parsing ranges
   const ranges = rangesStr
@@ -88,10 +87,19 @@ export function solve(input: string): Promise<string | number | object> {
     .filter((line) => line.trim() !== '')
     .map(Number)
 
+  const merged = mergeRanges(ranges)
+
+  // pt 1
   const freshCount = countFreshIngredientsFast(ranges, numbers)
+
+  // pt 2
+  const totalRange = merged.reduce(
+    (acc, [start, end]) => acc + (end - start + 1),
+    0,
+  )
 
   return Promise.resolve({
     part1: freshCount,
-    part2: '',
+    part2: totalRange,
   })
 }
