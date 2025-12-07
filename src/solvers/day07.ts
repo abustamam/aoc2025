@@ -44,6 +44,47 @@ function countSplits(lines: string[], startRow: number, startCol: number): numbe
   return splitCount
 }
 
+function countQuantumTimelines(
+  lines: string[],
+  startRow: number,
+  startCol: number,
+): bigint {
+  let activeTimelines = new Map<number, bigint>([[startCol, 1n]])
+
+  for (
+    let row = startRow;
+    row < lines.length && activeTimelines.size > 0;
+    row++
+  ) {
+    const line = lines[row]
+    const nextTimelines = new Map<number, bigint>()
+
+    for (const [col, count] of activeTimelines) {
+      if (col < 0 || col >= line.length) continue
+      const cell = line[col]
+
+      if (cell === '^') {
+        if (col - 1 >= 0) {
+          nextTimelines.set(col - 1, (nextTimelines.get(col - 1) ?? 0n) + count)
+        }
+        if (col + 1 < line.length) {
+          nextTimelines.set(col + 1, (nextTimelines.get(col + 1) ?? 0n) + count)
+        }
+      } else {
+        nextTimelines.set(col, (nextTimelines.get(col) ?? 0n) + count)
+      }
+    }
+
+    activeTimelines = nextTimelines
+  }
+
+  let totalTimelines = 0n
+  for (const count of activeTimelines.values()) {
+    totalTimelines += count
+  }
+  return totalTimelines
+}
+
 export function solve(input: string): Promise<string | number | object> {
   const lines = input
     .trim()
@@ -52,10 +93,12 @@ export function solve(input: string): Promise<string | number | object> {
 
   const { row: startRow, col: startCol } = findEmitter(lines)
   const part1 = countSplits(lines, startRow, startCol)
+  const part2 = countQuantumTimelines(lines, startRow, startCol)
 
   return Promise.resolve({
     part1,
-    part2: 'Not implemented yet',
+    part2: part2.toString(),
   })
 }
+
 
