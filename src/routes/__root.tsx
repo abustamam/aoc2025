@@ -8,7 +8,8 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
-import appCss from '../styles.css?url'
+// Import CSS directly so it's bundled and inlined
+import '../styles.css'
 import { Navbar } from '../components/Navbar'
 
 import type { QueryClient } from '@tanstack/react-query'
@@ -104,7 +105,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         // Theme color for mobile browsers
         {
           name: 'theme-color',
-          content: '#ffffff',
+          content: '#0f172a',
         },
         // Apple mobile web app
         {
@@ -122,8 +123,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       ],
       links: [
         {
-          rel: 'stylesheet',
-          href: appCss,
+          rel: 'preload',
+          href: '/css/starry-night-dark.css',
+          as: 'style',
         },
         {
           rel: 'stylesheet',
@@ -166,6 +168,24 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        {/* Critical CSS to prevent FOUC */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              body {
+                margin: 0;
+                background: linear-gradient(to bottom, #0f172a, #1e293b, #0f172a);
+                color: #f1f5f9;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+              }
+              * {
+                box-sizing: border-box;
+              }
+            `,
+          }}
+        />
       </head>
       <body>
         <Navbar />
