@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { Day01Visualization } from '../components/visualizations/Day01Visualization'
+import { Day03Visualization } from '../components/visualizations/Day03Visualization'
 import { Day04Visualization } from '../components/visualizations/Day04Visualization'
 import { Day07Visualization } from '../components/visualizations/Day07Visualization'
 import { Day08Visualization } from '../components/visualizations/Day08Visualization'
@@ -53,6 +54,8 @@ function VisualizationPage() {
     switch (dayPadded) {
       case '01':
         return <Day01Visualization input={input} />
+      case '03':
+        return <Day03Visualization input={input} />
       case '04':
         return <Day04Visualization input={input} />
       case '07':
