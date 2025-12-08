@@ -92,7 +92,17 @@ class CircuitManager {
   }
 }
 
-const MAX_CONNECTIONS = 1000
+const DEFAULT_CONNECTIONS = 1000
+
+function getConnectionsTarget(): number {
+  const override = process.env.AOC_DAY08_CONNECTIONS
+  if (!override) return DEFAULT_CONNECTIONS
+  const parsed = Number(override)
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_CONNECTIONS
+  }
+  return Math.max(0, Math.floor(parsed))
+}
 
 function parsePoints(input: string): Point3D[] {
   return input
@@ -196,7 +206,8 @@ export function solve(input: string): Promise<string | number | object> {
   )
 
   const circuitManager = new CircuitManager(points.length, junctions)
-  const connectionsToProcess = Math.min(MAX_CONNECTIONS, pairs.length)
+  const connectionsTarget = getConnectionsTarget()
+  const connectionsToProcess = Math.min(connectionsTarget, pairs.length)
 
   for (let idx = 0; idx < connectionsToProcess; idx++) {
     const { i, j } = pairs[idx]
