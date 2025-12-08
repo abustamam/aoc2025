@@ -65,10 +65,17 @@ jobs:
 
       - name: Download puzzle
         if: steps.date.outputs.skip != 'true'
+        uses: nick-fields/retry@v3
         env:
           AOC_SESSION: ${{ secrets.AOC_SESSION }}
-        run: |
-          bun scripts/download-puzzle.ts ${{ steps.date.outputs.day }} ${{ steps.date.outputs.year }}
+        with:
+          max_attempts: 3
+          retry_wait_minutes: 5
+          timeout_minutes: 2
+          command: >
+            bun scripts/download-puzzle.ts
+            ${{ steps.date.outputs.day }}
+            ${{ steps.date.outputs.year }}
 
       - name: Commit and push
         if: steps.date.outputs.skip != 'true'
@@ -76,7 +83,8 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          DAY_PADDED=$(printf "%02d" ${{ steps.date.outputs.day }})
+          DAY_NUM=$((10#${{ steps.date.outputs.day }}))
+          DAY_PADDED=$(printf "%02d" "$DAY_NUM")
           git add "src/inputs/day${DAY_PADDED}/"
           
           if git diff --staged --quiet; then
