@@ -2,6 +2,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
+import { Day01Visualization } from '../components/visualizations/Day01Visualization'
 import { Day07Visualization } from '../components/visualizations/Day07Visualization'
 import { Day08Visualization } from '../components/visualizations/Day08Visualization'
 
@@ -27,7 +28,7 @@ const getVisualizationData = createServerFn({ method: 'GET' })
   })
 
 // Days that have visualizations
-const VISUALIZATION_DAYS = new Set(['07', '08'])
+const VISUALIZATION_DAYS = new Set(['01', '07', '08'])
 
 export const Route = createFileRoute('/puzzle/$day/visualization')({
   component: VisualizationPage,
@@ -49,6 +50,8 @@ function VisualizationPage() {
 
   const renderVisualization = () => {
     switch (dayPadded) {
+      case '01':
+        return <Day01Visualization input={input} />
       case '07':
         return <Day07Visualization input={input} />
       case '08':

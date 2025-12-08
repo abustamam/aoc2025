@@ -10,7 +10,7 @@ import { createServerFn } from '@tanstack/react-start'
 import ReactMarkdown from 'react-markdown'
 
 // Days that have visualizations
-const VISUALIZATION_DAYS = new Set(['07', '08'])
+const VISUALIZATION_DAYS = new Set(['01', '07', '08'])
 
 const getPuzzleContent = createServerFn({ method: 'GET' })
   .inputValidator((d: { day: string }) => d)
