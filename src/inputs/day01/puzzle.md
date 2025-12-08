@@ -1,6 +1,7 @@
-\--- Day 1: Secret Entrance ---
+--- Day 1: Secret Entrance ---
 ----------
 
+## --- Day 1: Secret Entrance ---
 The Elves have good news and bad news.
 
 The good news is that they've discovered [project management](https://en.wikipedia.org/wiki/Project_management)! This has given them the tools they need to prevent their usual Christmas emergency. For example, they now know that the North Pole decorations need to be finished soon so that other critical tasks can start on time.
@@ -9,7 +10,7 @@ The bad news is that they've realized they have a *different* emergency: accordi
 
 To save Christmas, the Elves need *you* to *finish decorating the North Pole by December 12th*.
 
-Collect stars by solving puzzles. Two puzzles will be made available on each day; the second puzzle is unlocked when you complete the first. Each puzzle grants *one star*. Good luck!
+Collect stars by solving puzzles.  Two puzzles will be made available on each day; the second puzzle is unlocked when you complete the first.  Each puzzle grants *one star*. Good luck!
 
 You arrive at the secret entrance to the North Pole base ready to start decorating. Unfortunately, the *password* seems to have been changed, so you can't get in. A document taped to the wall helpfully explains:
 
@@ -42,64 +43,70 @@ L1
 L99
 R14
 L82
-
 ```
-
 Following these rotations would cause the dial to move as follows:
 
-* The dial starts by pointing at `50`.
-* The dial is rotated `L68` to point at `82`.
-* The dial is rotated `L30` to point at `52`.
-* The dial is rotated `R48` to point at `*0*`.
-* The dial is rotated `L5` to point at `95`.
-* The dial is rotated `R60` to point at `55`.
-* The dial is rotated `L55` to point at `*0*`.
-* The dial is rotated `L1` to point at `99`.
-* The dial is rotated `L99` to point at `*0*`.
-* The dial is rotated `R14` to point at `14`.
-* The dial is rotated `L82` to point at `32`.
+- The dial starts by pointing at `50`.
+
+- The dial is rotated `L68` to point at `82`.
+
+- The dial is rotated `L30` to point at `52`.
+
+- The dial is rotated `R48` to point at `*0*`.
+
+- The dial is rotated `L5` to point at `95`.
+
+- The dial is rotated `R60` to point at `55`.
+
+- The dial is rotated `L55` to point at `*0*`.
+
+- The dial is rotated `L1` to point at `99`.
+
+- The dial is rotated `L99` to point at `*0*`.
+
+- The dial is rotated `R14` to point at `14`.
+
+- The dial is rotated `L82` to point at `32`.
 
 Because the dial points at `0` a total of three times during this process, the password in this example is `*3*`.
 
 Analyze the rotations in your attached document. *What's the actual password to open the door?*
 
-Your puzzle answer was `1081`.
-
-The first half of this puzzle is complete! It provides one gold star: \*
-
-\--- Part Two ---
-----------
-
+## --- Part Two ---
 You're sure that's the right password, but the door won't open. You knock, but nobody answers. You build a snowman while you think.
 
 As you're rolling the snowballs for your snowman, you find another security document that must have fallen into the snow:
 
-"Due to newer security protocols, please use *password method 0x434C49434B* until further notice."
+"Due to newer security protocols, please use *password method <span title="You should have seen the chaos when the Elves overflowed their 32-bit password method counter.">0x434C49434B</span>* until further notice."
 
 You remember from the training seminar that "method 0x434C49434B" means you're actually supposed to count the number of times *any click* causes the dial to point at `0`, regardless of whether it happens during a rotation or at the end of one.
 
 Following the same rotations as in the above example, the dial points at zero a few extra times during its rotations:
 
-* The dial starts by pointing at `50`.
-* The dial is rotated `L68` to point at `82`; during this rotation, it points at `0` *once*.
-* The dial is rotated `L30` to point at `52`.
-* The dial is rotated `R48` to point at `*0*`.
-* The dial is rotated `L5` to point at `95`.
-* The dial is rotated `R60` to point at `55`; during this rotation, it points at `0` *once*.
-* The dial is rotated `L55` to point at `*0*`.
-* The dial is rotated `L1` to point at `99`.
-* The dial is rotated `L99` to point at `*0*`.
-* The dial is rotated `R14` to point at `14`.
-* The dial is rotated `L82` to point at `32`; during this rotation, it points at `0` *once*.
+- The dial starts by pointing at `50`.
+
+- The dial is rotated `L68` to point at `82`; during this rotation, it points at `0` *once*.
+
+- The dial is rotated `L30` to point at `52`.
+
+- The dial is rotated `R48` to point at `*0*`.
+
+- The dial is rotated `L5` to point at `95`.
+
+- The dial is rotated `R60` to point at `55`; during this rotation, it points at `0` *once*.
+
+- The dial is rotated `L55` to point at `*0*`.
+
+- The dial is rotated `L1` to point at `99`.
+
+- The dial is rotated `L99` to point at `*0*`.
+
+- The dial is rotated `R14` to point at `14`.
+
+- The dial is rotated `L82` to point at `32`; during this rotation, it points at `0` *once*.
 
 In this example, the dial points at `0` three times at the end of a rotation, plus three more times during a rotation. So, in this example, the new password would be `*6*`.
 
 Be careful: if the dial were pointing at `50`, a single rotation like `R1000` would cause the dial to point at `0` ten times before returning back to `50`!
 
 Using password method 0x434C49434B, *what is the password to open the door?*
-
-Answer:
-
-Although it hasn't changed, you can still [get your puzzle input](1/input).
-
-You can also [Shareon [Bluesky](https://bsky.app/intent/compose?text=I%27ve+completed+Part+One+of+%22Secret+Entrance%22+%2D+Day+1+%2D+Advent+of+Code+2025+%23AdventOfCode+https%3A%2F%2Fadventofcode%2Ecom%2F2025%2Fday%2F1) [Twitter](https://twitter.com/intent/tweet?text=I%27ve+completed+Part+One+of+%22Secret+Entrance%22+%2D+Day+1+%2D+Advent+of+Code+2025&url=https%3A%2F%2Fadventofcode%2Ecom%2F2025%2Fday%2F1&related=ericwastl&hashtags=AdventOfCode) [Mastodon](javascript:void(0);)] this puzzle.

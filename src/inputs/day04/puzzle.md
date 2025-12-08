@@ -1,7 +1,8 @@
-\--- Day 4: Printing Department ---
+--- Day 4: Printing Department ---
 ----------
 
-You ride the escalator down to the printing department. They're clearly getting ready for Christmas; they have lots of large rolls of paper everywhere, and there's even a massive printer in the corner (to handle the really big print jobs).
+## --- Day 4: Printing Department ---
+You ride the escalator down to the printing department. They're clearly getting ready for Christmas; they have lots of large rolls of paper everywhere, and there's even a massive printer in the corner (to handle the really <span title="This joke is stupid and I love it.">big</span> print jobs).
 
 Decorating here will be easy: they can make their own decorations. What you really need is a way to get further into the North Pole base while the elevators are offline.
 
@@ -24,9 +25,7 @@ For example:
 @.@@@.@@@@
 .@@@@@@@@.
 @.@.@@@.@.
-
 ```
-
 The forklifts can only access a roll of paper if there are *fewer than four rolls of paper* in the eight adjacent positions. If you can figure out which rolls of paper the forklifts can access, they'll spend less time looking and more time breaking down the wall to the cafeteria.
 
 In this example, there are `*13*` rolls of paper that can be accessed by a forklift (marked with `x`):
@@ -42,18 +41,10 @@ x@.@@@@.@x
 x.@@@.@@@@
 .@@@@@@@@.
 x.x.@@@.x.
-
 ```
-
 Consider your complete diagram of the paper roll locations. *How many rolls of paper can be accessed by a forklift?*
 
-Your puzzle answer was `1523`.
-
-The first half of this puzzle is complete! It provides one gold star: \*
-
-\--- Part Two ---
-----------
-
+## --- Part Two ---
 Now, the Elves just need help accessing as much of the paper as they can.
 
 Once a roll of paper can be accessed by a forklift, it can be *removed*. Once a roll of paper is removed, the forklifts might be able to access *more* rolls of paper, which they might also be able to remove. How many total rolls of paper could the Elves remove if they keep repeating this process?
@@ -62,70 +53,70 @@ Starting with the same example as above, here is one way you could remove as man
 
 ```
 Initial state:
-..@@.@@@@.
-@@@.@.@.@@
-@@@@@.@.@@
+..*@**@*.*@**@*@*@*.
+*@*@@.@.@.@@
+@@@@@.*@*.@@
 @.@@@@..@.
-@@.@@@@.@@
+*@*@.@@@@.@*@*
 .@@@@@@@.@
 .@.@.@.@@@
-@.@@@.@@@@
+*@*.@@@.@@@@
 .@@@@@@@@.
-@.@.@@@.@.
+*@*.*@*.@@@.*@*.
 
 Remove 13 rolls of paper:
-..xx.xx@x.
-x@@.@.@.@@
-@@@@@.x.@@
-@.@@@@..@.
-x@.@@@@.@x
-.@@@@@@@.@
-.@.@.@.@@@
+..xx.xx*@*x.
+x@@.*@*.*@*.@*@*
+*@*@@@@.x.@@
+*@*.@@@@..*@*.
+x@.@@@@.*@*x
+.*@*@@@@@@.*@*
+.*@*.@.@.@@@
 x.@@@.@@@@
-.@@@@@@@@.
+.*@*@@@@@@@.
 x.x.@@@.x.
 
 Remove 12 rolls of paper:
 .......x..
-.@@.x.x.@x
-x@@@@...@@
+.*@*@.x.x.*@*x
+x@@@@...*@**@*
 x.@@@@..x.
-.@.@@@@.x.
+.*@*.@@@@.x.
 .x@@@@@@.x
-.x.@.@.@@@
+.x.@.@.@@*@*
 ..@@@.@@@@
-.x@@@@@@@.
+.x*@*@@@@@@.
 ....@@@...
 
 Remove 7 rolls of paper:
 ..........
-.x@.....x.
-.@@@@...xx
+.x*@*.....x.
+.*@*@@@...xx
 ..@@@@....
 .x.@@@@...
-..@@@@@@..
+..*@*@@@@@..
 ...@.@.@@x
-..@@@.@@@@
+..*@*@@.@@@*@*
 ..x@@@@@@.
 ....@@@...
 
 Remove 5 rolls of paper:
 ..........
 ..x.......
-.x@@@.....
+.x*@*@@.....
 ..@@@@....
 ...@@@@...
 ..x@@@@@..
 ...@.@.@@.
 ..x@@.@@@x
-...@@@@@@.
+...@@@@@*@*.
 ....@@@...
 
 Remove 2 rolls of paper:
 ..........
 ..........
 ..x@@.....
-..@@@@....
+..*@*@@@....
 ...@@@@...
 ...@@@@@..
 ...@.@.@@.
@@ -136,7 +127,7 @@ Remove 2 rolls of paper:
 Remove 1 roll of paper:
 ..........
 ..........
-...@@.....
+...*@*@.....
 ..x@@@....
 ...@@@@...
 ...@@@@@..
@@ -148,7 +139,7 @@ Remove 1 roll of paper:
 Remove 1 roll of paper:
 ..........
 ..........
-...x@.....
+...x*@*.....
 ...@@@....
 ...@@@@...
 ...@@@@@..
@@ -161,7 +152,7 @@ Remove 1 roll of paper:
 ..........
 ..........
 ....x.....
-...@@@....
+...*@*@@....
 ...@@@@...
 ...@@@@@..
 ...@.@.@@.
@@ -180,15 +171,7 @@ Remove 1 roll of paper:
 ...@@.@@@.
 ...@@@@@..
 ....@@@...
-
 ```
-
 Stop once no more rolls of paper are accessible by a forklift. In this example, a total of `*43*` rolls of paper can be removed.
 
 Start with your original diagram. *How many rolls of paper in total can be removed by the Elves and their forklifts?*
-
-Answer:
-
-Although it hasn't changed, you can still [get your puzzle input](4/input).
-
-You can also [Shareon [Bluesky](https://bsky.app/intent/compose?text=I%27ve+completed+Part+One+of+%22Printing+Department%22+%2D+Day+4+%2D+Advent+of+Code+2025+%23AdventOfCode+https%3A%2F%2Fadventofcode%2Ecom%2F2025%2Fday%2F4) [Twitter](https://twitter.com/intent/tweet?text=I%27ve+completed+Part+One+of+%22Printing+Department%22+%2D+Day+4+%2D+Advent+of+Code+2025&url=https%3A%2F%2Fadventofcode%2Ecom%2F2025%2Fday%2F4&related=ericwastl&hashtags=AdventOfCode) [Mastodon](javascript:void(0);)] this puzzle.
