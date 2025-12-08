@@ -2,6 +2,75 @@ import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 
+interface BatteryProps {
+  digit: string
+  isSelected: boolean
+  size?: 'large' | 'small'
+  index?: number
+}
+
+function Battery({ digit, isSelected, size = 'large', index }: BatteryProps) {
+  const isLarge = size === 'large'
+  const width = isLarge ? 'w-14' : 'w-7'
+  const height = isLarge ? 'h-20' : 'h-10'
+  const terminalWidth = isLarge ? 'w-5' : 'w-2.5'
+  const terminalHeight = isLarge ? 'h-2.5' : 'h-1'
+  const fontSize = isLarge ? 'text-2xl' : 'text-xs'
+  const borderWidth = isLarge ? 'border-2' : 'border'
+
+  return (
+    <div className="relative flex flex-col items-center">
+      {/* Positive Terminal */}
+      <div
+        className={`
+          ${terminalWidth} ${terminalHeight} rounded-t-md
+          ${
+            isSelected
+              ? 'bg-cyan-300 shadow-md shadow-cyan-300/50'
+              : 'bg-slate-400'
+          }
+          transition-all duration-300
+        `}
+      />
+      {/* Battery Body */}
+      <div
+        className={`
+          ${width} ${height} ${borderWidth} rounded-md flex flex-col items-center justify-center
+          transition-all duration-300 relative overflow-hidden
+          ${
+            isSelected
+              ? 'bg-gradient-to-b from-cyan-500 via-cyan-600 to-cyan-700 border-cyan-300 text-white shadow-xl shadow-cyan-500/40 scale-110 z-10'
+              : 'bg-gradient-to-b from-slate-600 via-slate-700 to-slate-800 border-slate-500 text-slate-200'
+          }
+        `}
+        title={`Position ${index !== undefined ? index + 1 : ''}, Digit: ${digit}`}
+      >
+        {/* Battery label/voltage indicator */}
+        <div
+          className={`
+            ${fontSize} font-bold drop-shadow-sm
+            ${isSelected ? 'text-white' : 'text-slate-200'}
+          `}
+        >
+          {digit}
+        </div>
+        {/* Battery level indicator (bottom stripe) */}
+        <div
+          className={`
+            absolute bottom-0 left-0 right-0
+            ${isLarge ? 'h-1.5' : 'h-0.5'}
+            ${isSelected ? 'bg-cyan-200' : 'bg-slate-500/40'}
+          `}
+        />
+        {/* Subtle shine effect */}
+        {isSelected && (
+          <div className="absolute top-1 left-1 right-1 h-2 bg-white/20 rounded-sm" />
+        )}
+      </div>
+    </div>
+  )
+}
+
 interface BatterySelection {
   joltage: number
   selectedIndices: number[]
@@ -202,27 +271,19 @@ export function Day03Visualization({ input }: { input: string }) {
             </div>
 
             {/* Battery Sequence */}
-            <div className="bg-slate-900/50 rounded-lg p-4 overflow-x-auto">
-              <div className="flex gap-2 justify-center flex-wrap">
+            <div className="bg-slate-900/50 rounded-lg p-6 overflow-x-auto">
+              <div className="flex gap-3 justify-center flex-wrap items-end">
                 {currentBank.split('').map((digit, index) => {
                   const isSelected =
                     currentSelection.selectedIndices.includes(index)
                   return (
-                    <div
+                    <Battery
                       key={index}
-                      className={`
-                        w-12 h-12 rounded-lg flex items-center justify-center
-                        font-bold text-lg transition-all duration-300
-                        ${
-                          isSelected
-                            ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50 scale-110'
-                            : 'bg-slate-700 text-slate-300'
-                        }
-                      `}
-                      title={`Position ${index + 1}, Digit: ${digit}`}
-                    >
-                      {digit}
-                    </div>
+                      digit={digit}
+                      isSelected={isSelected}
+                      size="large"
+                      index={index}
+                    />
                   )
                 })}
               </div>
@@ -288,24 +349,17 @@ export function Day03Visualization({ input }: { input: string }) {
                           {selection.joltage.toLocaleString()}
                         </span>
                       </div>
-                      <div className="flex gap-1 flex-wrap">
+                      <div className="flex gap-1.5 flex-wrap items-end">
                         {bank.split('').map((digit, digitIndex) => {
                           const isSelected =
                             selection.selectedIndices.includes(digitIndex)
                           return (
-                            <span
+                            <Battery
                               key={digitIndex}
-                              className={`
-                                text-xs px-1.5 py-0.5 rounded
-                                ${
-                                  isSelected
-                                    ? 'bg-cyan-500/30 text-cyan-300'
-                                    : 'text-slate-500'
-                                }
-                              `}
-                            >
-                              {digit}
-                            </span>
+                              digit={digit}
+                              isSelected={isSelected}
+                              size="small"
+                            />
                           )
                         })}
                       </div>
