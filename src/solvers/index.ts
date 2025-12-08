@@ -18,18 +18,6 @@ import * as day09 from './day09'
 import * as day10 from './day10'
 import * as day11 from './day11'
 import * as day12 from './day12'
-import * as day13 from './day13'
-import * as day14 from './day14'
-import * as day15 from './day15'
-import * as day16 from './day16'
-import * as day17 from './day17'
-import * as day18 from './day18'
-import * as day19 from './day19'
-import * as day20 from './day20'
-import * as day21 from './day21'
-import * as day22 from './day22'
-import * as day23 from './day23'
-import * as day24 from './day24'
 
 // Add your solvers here as you create them
 export const solvers: Record<
@@ -48,18 +36,6 @@ export const solvers: Record<
   '10': day10,
   '11': day11,
   '12': day12,
-  '13': day13,
-  '14': day14,
-  '15': day15,
-  '16': day16,
-  '17': day17,
-  '18': day18,
-  '19': day19,
-  '20': day20,
-  '21': day21,
-  '22': day22,
-  '23': day23,
-  '24': day24,
 }
 
 export function getSolver(
