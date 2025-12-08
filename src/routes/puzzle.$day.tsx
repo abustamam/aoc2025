@@ -8,9 +8,7 @@ import {
 } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import ReactMarkdown from 'react-markdown'
-
-// Days that have visualizations
-const VISUALIZATION_DAYS = new Set(['01', '07', '08'])
+import { checkVisualizationExists } from '../utils/visualizations'
 
 const getPuzzleContent = createServerFn({ method: 'GET' })
   .inputValidator((d: { day: string }) => d)
@@ -56,26 +54,30 @@ export const Route = createFileRoute('/puzzle/$day')({
     const prevDay = (dayNum - 1).toString().padStart(2, '0')
     const nextDay = (dayNum + 1).toString().padStart(2, '0')
 
-    const [puzzleData, prevDayExists, nextDayExists] = await Promise.all([
-      getPuzzleContent({ data: { day } }),
-      dayNum > 1
-        ? checkDayExists({ data: { day: prevDay } })
-        : Promise.resolve({ exists: false }),
-      dayNum < 25
-        ? checkDayExists({ data: { day: nextDay } })
-        : Promise.resolve({ exists: false }),
-    ])
+    const [puzzleData, prevDayExists, nextDayExists, visualizationExists] =
+      await Promise.all([
+        getPuzzleContent({ data: { day } }),
+        dayNum > 1
+          ? checkDayExists({ data: { day: prevDay } })
+          : Promise.resolve({ exists: false }),
+        dayNum < 25
+          ? checkDayExists({ data: { day: nextDay } })
+          : Promise.resolve({ exists: false }),
+        checkVisualizationExists({ data: { day } }),
+      ])
 
     return {
       ...puzzleData,
       prevDayExists: prevDayExists.exists,
       nextDayExists: nextDayExists.exists,
+      visualizationExists: visualizationExists.exists,
     }
   },
 })
 
 function PuzzlePage() {
-  const { content, day, prevDayExists, nextDayExists } = Route.useLoaderData()
+  const { content, day, prevDayExists, nextDayExists, visualizationExists } =
+    Route.useLoaderData()
   const location = useLocation()
   const dayNum = parseInt(day, 10)
   const prevDay = (dayNum - 1).toString().padStart(2, '0')
@@ -186,7 +188,7 @@ function PuzzlePage() {
                 Solve
               </Link>
             )}
-            {VISUALIZATION_DAYS.has(day.padStart(2, '0')) &&
+            {visualizationExists &&
               (isVisualizationActive ? (
                 <span className="text-gray-500 cursor-not-allowed">
                   Visualization
