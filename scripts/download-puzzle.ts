@@ -88,7 +88,7 @@ async function downloadPuzzle(
   const articleMatches = html.matchAll(
     /<article class="day-desc">([\s\S]*?)<\/article>/g,
   )
-  const articles: string[] = []
+  const articles: Array<string> = []
 
   for (const match of articleMatches) {
     articles.push(match[1])
@@ -146,7 +146,7 @@ async function downloadPuzzle(
   })
 
   // Combine all parts
-  let markdown = processedArticles.join('\n\n')
+  const markdown = processedArticles.join('\n\n')
 
   // Add day header
   const dayTitle =
