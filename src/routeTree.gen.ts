@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PuzzleDayRouteImport } from './routes/puzzle.$day'
+import { Route as PuzzleDayVisualizationRouteImport } from './routes/puzzle.$day.visualization'
 import { Route as PuzzleDaySolveRouteImport } from './routes/puzzle.$day.solve'
 import { Route as PuzzleDayInputRouteImport } from './routes/puzzle.$day.input'
 
@@ -23,6 +24,11 @@ const PuzzleDayRoute = PuzzleDayRouteImport.update({
   id: '/puzzle/$day',
   path: '/puzzle/$day',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PuzzleDayVisualizationRoute = PuzzleDayVisualizationRouteImport.update({
+  id: '/visualization',
+  path: '/visualization',
+  getParentRoute: () => PuzzleDayRoute,
 } as any)
 const PuzzleDaySolveRoute = PuzzleDaySolveRouteImport.update({
   id: '/solve',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/puzzle/$day': typeof PuzzleDayRouteWithChildren
   '/puzzle/$day/input': typeof PuzzleDayInputRoute
   '/puzzle/$day/solve': typeof PuzzleDaySolveRoute
+  '/puzzle/$day/visualization': typeof PuzzleDayVisualizationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/puzzle/$day': typeof PuzzleDayRouteWithChildren
   '/puzzle/$day/input': typeof PuzzleDayInputRoute
   '/puzzle/$day/solve': typeof PuzzleDaySolveRoute
+  '/puzzle/$day/visualization': typeof PuzzleDayVisualizationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,18 +61,30 @@ export interface FileRoutesById {
   '/puzzle/$day': typeof PuzzleDayRouteWithChildren
   '/puzzle/$day/input': typeof PuzzleDayInputRoute
   '/puzzle/$day/solve': typeof PuzzleDaySolveRoute
+  '/puzzle/$day/visualization': typeof PuzzleDayVisualizationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/puzzle/$day' | '/puzzle/$day/input' | '/puzzle/$day/solve'
+  fullPaths:
+    | '/'
+    | '/puzzle/$day'
+    | '/puzzle/$day/input'
+    | '/puzzle/$day/solve'
+    | '/puzzle/$day/visualization'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/puzzle/$day' | '/puzzle/$day/input' | '/puzzle/$day/solve'
+  to:
+    | '/'
+    | '/puzzle/$day'
+    | '/puzzle/$day/input'
+    | '/puzzle/$day/solve'
+    | '/puzzle/$day/visualization'
   id:
     | '__root__'
     | '/'
     | '/puzzle/$day'
     | '/puzzle/$day/input'
     | '/puzzle/$day/solve'
+    | '/puzzle/$day/visualization'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -88,6 +108,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PuzzleDayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/puzzle/$day/visualization': {
+      id: '/puzzle/$day/visualization'
+      path: '/visualization'
+      fullPath: '/puzzle/$day/visualization'
+      preLoaderRoute: typeof PuzzleDayVisualizationRouteImport
+      parentRoute: typeof PuzzleDayRoute
+    }
     '/puzzle/$day/solve': {
       id: '/puzzle/$day/solve'
       path: '/solve'
@@ -108,11 +135,13 @@ declare module '@tanstack/react-router' {
 interface PuzzleDayRouteChildren {
   PuzzleDayInputRoute: typeof PuzzleDayInputRoute
   PuzzleDaySolveRoute: typeof PuzzleDaySolveRoute
+  PuzzleDayVisualizationRoute: typeof PuzzleDayVisualizationRoute
 }
 
 const PuzzleDayRouteChildren: PuzzleDayRouteChildren = {
   PuzzleDayInputRoute: PuzzleDayInputRoute,
   PuzzleDaySolveRoute: PuzzleDaySolveRoute,
+  PuzzleDayVisualizationRoute: PuzzleDayVisualizationRoute,
 }
 
 const PuzzleDayRouteWithChildren = PuzzleDayRoute._addFileChildren(

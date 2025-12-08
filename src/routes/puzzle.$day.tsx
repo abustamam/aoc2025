@@ -3,7 +3,9 @@ import path from 'node:path'
 import { Outlet, createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import ReactMarkdown from 'react-markdown'
-import { Github } from 'lucide-react'
+
+// Days that have visualizations
+const VISUALIZATION_DAYS = new Set(['07', '08'])
 
 const getPuzzleContent = createServerFn({ method: 'GET' })
   .inputValidator((d: { day: string }) => d)
@@ -40,16 +42,6 @@ function PuzzlePage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6 relative">
-          <a
-            href="https://github.com/abustamam/aoc2025"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="absolute top-0 right-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800/50 border border-slate-700 hover:border-cyan-500/50 hover:bg-slate-800/70 transition-all duration-300 text-gray-300 hover:text-cyan-400"
-            aria-label="View on GitHub"
-          >
-            <Github className="w-5 h-5" />
-            <span className="text-sm font-medium">GitHub</span>
-          </a>
           <Outlet />
           <h1 className="text-4xl font-bold text-white mb-2">
             Day {day} - Advent of Code 2025
@@ -67,6 +59,14 @@ function PuzzlePage() {
             >
               Solve
             </a>
+            {VISUALIZATION_DAYS.has(day.padStart(2, '0')) && (
+              <a
+                href={`/puzzle/${day}/visualization`}
+                className="text-cyan-400 hover:text-cyan-300 underline"
+              >
+                Visualization
+              </a>
+            )}
           </div>
         </div>
         <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-8 prose prose-invert prose-headings:text-white prose-p:text-white prose-strong:text-white prose-em:text-white prose-li:text-white prose-code:text-cyan-400 prose-code:bg-slate-900/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-700 prose-pre:text-gray-200 prose-a:text-cyan-400 prose-a:hover:text-cyan-300 max-w-none text-white">
