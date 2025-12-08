@@ -83,7 +83,8 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          DAY_PADDED=$(printf "%02d" ${{ steps.date.outputs.day }})
+          DAY_NUM=$((10#${{ steps.date.outputs.day }}))
+          DAY_PADDED=$(printf "%02d" "$DAY_NUM")
           git add "src/inputs/day${DAY_PADDED}/"
           
           if git diff --staged --quiet; then
