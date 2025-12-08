@@ -25,6 +25,7 @@ class CircuitManager {
   private parent: number[]
   private size: number[]
   private circuits: Map<number, Set<number>>
+  private circuitCount: number
 
   constructor(
     private readonly count: number,
@@ -33,6 +34,7 @@ class CircuitManager {
     this.parent = Array.from({ length: count }, (_, index) => index)
     this.size = Array.from({ length: count }, () => 1)
     this.circuits = new Map()
+    this.circuitCount = count
 
     for (let index = 0; index < count; index++) {
       this.circuits.set(index, new Set([index]))
@@ -46,12 +48,12 @@ class CircuitManager {
     return this.parent[node]
   }
 
-  union(a: number, b: number): number {
+  union(a: number, b: number): { merged: boolean; root: number } {
     let rootA = this.find(a)
     let rootB = this.find(b)
 
     if (rootA === rootB) {
-      return rootA
+      return { merged: false, root: rootA }
     }
 
     if (this.size[rootA] < this.size[rootB]) {
@@ -77,7 +79,8 @@ class CircuitManager {
     }
 
     this.circuits.delete(rootB)
-    return rootA
+    this.circuitCount -= 1
+    return { merged: true, root: rootA }
   }
 
   getCircuitSizes(): number[] {
@@ -89,6 +92,10 @@ class CircuitManager {
       circuitId,
       members: [...members].sort((a, b) => a - b),
     }))
+  }
+
+  getCircuitCount(): number {
+    return this.circuitCount
   }
 }
 
@@ -207,18 +214,40 @@ export function solve(input: string): Promise<string | number | object> {
 
   const circuitManager = new CircuitManager(points.length, junctions)
   const connectionsTarget = getConnectionsTarget()
-  const connectionsToProcess = Math.min(connectionsTarget, pairs.length)
+  let part1: number | null = null
+  let finalConnectionProduct: number | null = null
+  let finalConnectionPair: DistancePair | null = null
 
-  for (let idx = 0; idx < connectionsToProcess; idx++) {
+  for (let idx = 0; idx < pairs.length; idx++) {
     const { i, j } = pairs[idx]
-    circuitManager.union(i, j)
+    const { merged } = circuitManager.union(i, j)
+    const processedConnections = idx + 1
+
+    if (processedConnections === connectionsTarget && part1 === null) {
+      part1 = multiplyTopThree(circuitManager.getCircuitSizes())
+    }
+
+    if (
+      merged &&
+      finalConnectionProduct === null &&
+      circuitManager.getCircuitCount() === 1
+    ) {
+      finalConnectionProduct = points[i].x * points[j].x
+      finalConnectionPair = pairs[idx]
+    }
+
+    if (part1 !== null && finalConnectionProduct !== null) {
+      break
+    }
   }
 
-  const circuitSizes = circuitManager
-    .getCircuitSizes()
-    .sort((a, b) => b - a)
+  if (part1 === null) {
+    part1 = multiplyTopThree(circuitManager.getCircuitSizes())
+  }
 
-  const part1 = multiplyTopThree(circuitSizes)
+  if (finalConnectionProduct === null || finalConnectionPair === null) {
+    throw new Error('Failed to connect all junction boxes into one circuit')
+  }
 
   const circuitSummaries = circuitManager
     .getCircuitSummaries()
@@ -249,6 +278,15 @@ export function solve(input: string): Promise<string | number | object> {
   return Promise.resolve({
     part1,
     part2: {
+      product: finalConnectionProduct,
+      finalConnection: {
+        indices: [finalConnectionPair.i, finalConnectionPair.j],
+        points: [
+          points[finalConnectionPair.i],
+          points[finalConnectionPair.j],
+        ],
+        distance: finalConnectionPair.distance,
+      },
       totalCircuits: circuitSummaries.length,
       circuits: circuitsRecord,
       junctions: junctionsRecord,
