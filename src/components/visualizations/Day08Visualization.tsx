@@ -49,22 +49,35 @@ export function Day08Visualization({ input }: { input: string }) {
     Array<{ i: number; j: number; distance: number }>
   >([])
   const pointsRef = useRef<Array<Point3D>>([])
+  const linesRef = useRef<Array<THREE.Line>>([])
+  const isRotatingRef = useRef(isRotating)
+  const [pointsLoaded, setPointsLoaded] = useState(false)
+
+  // Update rotating ref when state changes
+  useEffect(() => {
+    isRotatingRef.current = isRotating
+  }, [isRotating])
 
   useEffect(() => {
     const points = parsePoints(input)
     pointsRef.current = points
+    setPointsLoaded(points.length > 0)
     const maxPossible = (points.length * (points.length - 1)) / 2
     const actualConnections = Math.min(numConnections, maxPossible)
     const conns = buildConnections(points, actualConnections)
     setConnections(conns)
   }, [input, numConnections])
 
+  // Initial Three.js setup - runs when container is ready and points are loaded
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current || !pointsLoaded) return
+    const points = pointsRef.current
+    if (points.length === 0) return
+    if (sceneRef.current) return // Already initialized
 
     const container = containerRef.current
-    const width = container.clientWidth
-    const height = Math.max(600, window.innerHeight * 0.7)
+    const width = container.clientWidth || 800
+    const height = container.clientHeight || 600
 
     // Create scene
     const scene = new THREE.Scene()
@@ -72,18 +85,20 @@ export function Day08Visualization({ input }: { input: string }) {
     sceneRef.current = scene
 
     // Create camera
-    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 10000)
+    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000000)
     cameraRef.current = camera
 
     // Create renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setSize(width, height)
+    // Clear any existing canvas
+    while (container.firstChild) {
+      container.removeChild(container.firstChild)
+    }
     container.appendChild(renderer.domElement)
     rendererRef.current = renderer
 
     // Calculate bounding box
-    const points = pointsRef.current
-    if (points.length === 0) return
 
     let minX = Infinity,
       maxX = -Infinity
@@ -108,28 +123,47 @@ export function Day08Visualization({ input }: { input: string }) {
     const rangeX = maxX - minX
     const rangeY = maxY - minY
     const rangeZ = maxZ - minZ
-    const maxRange = Math.max(rangeX, rangeY, rangeZ)
+    const maxRange = Math.max(rangeX, rangeY, rangeZ, 1) // Ensure at least 1
+
+    // Calculate box size relative to the data range
+    // Make boxes visible but not too large
+    const boxSize = Math.max(maxRange * 0.01, 100) // At least 1% of range or 100 units
 
     // Position camera
-    const distance = maxRange * 2.5
+    const cameraDistance = maxRange * 2.5
     camera.position.set(
-      centerX + distance,
-      centerY + distance,
-      centerZ + distance,
+      centerX + cameraDistance,
+      centerY + cameraDistance,
+      centerZ + cameraDistance,
     )
     camera.lookAt(centerX, centerY, centerZ)
 
     // Add lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
     scene.add(ambientLight)
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
-    directionalLight.position.set(distance, distance, distance)
-    scene.add(directionalLight)
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8)
+    directionalLight1.position.set(
+      cameraDistance,
+      cameraDistance,
+      cameraDistance,
+    )
+    scene.add(directionalLight1)
+
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4)
+    directionalLight2.position.set(
+      -cameraDistance,
+      -cameraDistance,
+      -cameraDistance,
+    )
+    scene.add(directionalLight2)
 
     // Create junction boxes
-    const boxGeometry = new THREE.BoxGeometry(20, 20, 20)
-    const boxMaterial = new THREE.MeshPhongMaterial({ color: 0x22d3ee })
+    const boxGeometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize)
+    const boxMaterial = new THREE.MeshPhongMaterial({
+      color: 0x22d3ee,
+      emissive: 0x001122, // Add slight glow
+    })
     const boxes: Array<THREE.Mesh> = []
 
     points.forEach((point) => {
@@ -139,49 +173,15 @@ export function Day08Visualization({ input }: { input: string }) {
       boxes.push(box)
     })
 
-    // Create connections
-    const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0xfbbf24,
-      opacity: 0.6,
-      transparent: true,
-    })
-    const lines: Array<THREE.Line> = []
-
-    const updateConnections = () => {
-      // Remove old lines
-      lines.forEach((line) => {
-        scene.remove(line)
-        line.geometry.dispose()
-        if (line.material instanceof THREE.Material) {
-          line.material.dispose()
-        }
-      })
-      lines.length = 0
-
-      // Add new connections
-      connections.forEach(({ i, j }) => {
-        const pointA = points[i]
-        const pointB = points[j]
-
-        const geometry = new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(pointA.x, pointA.y, pointA.z),
-          new THREE.Vector3(pointB.x, pointB.y, pointB.z),
-        ])
-
-        const line = new THREE.Line(geometry, lineMaterial)
-        scene.add(line)
-        lines.push(line)
-      })
-    }
-
-    updateConnections()
+    // Store references for later updates
+    linesRef.current = []
 
     // Animation loop
     let angle = 0
     const animate = () => {
-      if (isRotating) {
+      if (isRotatingRef.current) {
         angle += 0.005
-        const radius = distance
+        const radius = cameraDistance
         camera.position.x = centerX + radius * Math.cos(angle)
         camera.position.z = centerZ + radius * Math.sin(angle)
         camera.lookAt(centerX, centerY, centerZ)
@@ -209,22 +209,75 @@ export function Day08Visualization({ input }: { input: string }) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
       }
-      container.removeChild(renderer.domElement)
+      // Clean up renderer
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement)
+      }
       renderer.dispose()
+      // Clean up geometries and materials
       boxes.forEach((box) => {
         box.geometry.dispose()
         if (box.material instanceof THREE.Material) {
           box.material.dispose()
         }
       })
-      lines.forEach((line) => {
+      linesRef.current.forEach((line) => {
         line.geometry.dispose()
         if (line.material instanceof THREE.Material) {
           line.material.dispose()
         }
       })
+      // Clean up lights
+      scene.children.forEach((child) => {
+        if (child instanceof THREE.Light) {
+          scene.remove(child)
+        }
+      })
+      sceneRef.current = null
     }
-  }, [connections, isRotating])
+  }, [pointsLoaded]) // Re-run when points are loaded
+
+  // Separate effect to update connections when they change
+  useEffect(() => {
+    const scene = sceneRef.current
+    if (!scene || connections.length === 0) return
+
+    const points = pointsRef.current
+    if (points.length === 0) return
+
+    // Remove old lines
+    linesRef.current.forEach((line) => {
+      scene.remove(line)
+      line.geometry.dispose()
+      if (line.material instanceof THREE.Material) {
+        line.material.dispose()
+      }
+    })
+    linesRef.current = []
+
+    // Create line material
+    const lineMaterial = new THREE.LineBasicMaterial({
+      color: 0xfbbf24,
+      opacity: 0.8,
+      transparent: true,
+      linewidth: 2,
+    })
+
+    // Add new connections
+    connections.forEach(({ i, j }) => {
+      const pointA = points[i]
+      const pointB = points[j]
+
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(pointA.x, pointA.y, pointA.z),
+        new THREE.Vector3(pointB.x, pointB.y, pointB.z),
+      ])
+
+      const line = new THREE.Line(geometry, lineMaterial)
+      scene.add(line)
+      linesRef.current.push(line)
+    })
+  }, [connections])
 
   return (
     <div className="space-y-6">
@@ -257,7 +310,6 @@ export function Day08Visualization({ input }: { input: string }) {
             <Button
               variant="outline"
               onClick={() => setIsRotating(!isRotating)}
-              className="text-white border-slate-600 hover:bg-slate-700"
             >
               {isRotating ? 'Pause Rotation' : 'Start Rotation'}
             </Button>
@@ -267,7 +319,12 @@ export function Day08Visualization({ input }: { input: string }) {
         <div
           ref={containerRef}
           className="w-full bg-slate-900/50 rounded-lg overflow-hidden"
-          style={{ height: '600px', minHeight: '600px' }}
+          style={{
+            height: '600px',
+            minHeight: '600px',
+            width: '100%',
+            position: 'relative',
+          }}
         />
       </div>
     </div>

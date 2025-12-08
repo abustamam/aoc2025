@@ -245,18 +245,10 @@ export function Day07Visualization({ input }: { input: string }) {
 
         <div className="flex gap-2 mb-4">
           <ButtonGroup>
-            <Button
-              variant="outline"
-              onClick={handlePlayPause}
-              className="text-white border-slate-600 hover:bg-slate-700"
-            >
+            <Button variant="outline" onClick={handlePlayPause}>
               {isPlaying ? 'Pause' : 'Play'}
             </Button>
-            <Button
-              variant="outline"
-              onClick={handleReset}
-              className="text-white border-slate-600 hover:bg-slate-700"
-            >
+            <Button variant="outline" onClick={handleReset}>
               Reset
             </Button>
             <Button
