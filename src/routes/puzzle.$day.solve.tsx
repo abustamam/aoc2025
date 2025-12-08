@@ -136,101 +136,76 @@ function SolvePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-4xl font-bold text-white mb-2">
-            Day {day} - Solver
-          </h1>
-          <div className="flex gap-4">
-            <a
-              href={`/puzzle/${day}`}
-              className="text-cyan-400 hover:text-cyan-300 underline"
-            >
-              View Puzzle
-            </a>
-            <a
-              href={`/puzzle/${day}/input`}
-              className="text-cyan-400 hover:text-cyan-300 underline"
-            >
-              View Input
-            </a>
-          </div>
+    <>
+      <div className="mb-6">
+        <ButtonGroup>
+          <Button
+            variant="outline"
+            onClick={() => runSolver(input)}
+            disabled={isRunning}
+          >
+            {isRunning ? 'Running...' : 'Run Solver'}
+          </Button>
+          {testInput && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" aria-label="Open Popover">
+                  <ChevronDownIcon />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="rounded-xl p-0 text-sm"
+              >
+                <DropdownMenuItem onClick={() => runSolver(testInput)}>
+                  Use test input
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </ButtonGroup>
+      </div>
+
+      {result !== null && (
+        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-8 mb-6">
+          <h2 className="text-2xl font-bold text-white mb-4">Result:</h2>
+          <CodeHighlight
+            code={result}
+            language="source.ts"
+            showLineNumbers
+            className="bg-[#1e1e1e]"
+          />
         </div>
+      )}
 
-        <div className="mb-6">
-          <ButtonGroup>
-            <Button
-              variant="outline"
-              onClick={() => runSolver(input)}
-              disabled={isRunning}
-            >
-              {isRunning ? 'Running...' : 'Run Solver'}
-            </Button>
-            {testInput && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label="Open Popover"
-                  >
-                    <ChevronDownIcon />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="rounded-xl p-0 text-sm"
-                >
-                  <DropdownMenuItem onClick={() => runSolver(testInput)}>
-                    Use test input
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </ButtonGroup>
-        </div>
-
-        {result !== null && (
-          <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-8 mb-6">
-            <h2 className="text-2xl font-bold text-white mb-4">Result:</h2>
-            <CodeHighlight
-              code={result}
-              language="source.ts"
-              showLineNumbers
-              className="bg-[#1e1e1e]"
-            />
-          </div>
-        )}
-
-        {solverCode && (
-          <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-8 mb-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Solver Code ({`src/solvers/day${day.padStart(2, '0')}.ts`}):
-            </h2>
-            <CodeHighlight
-              code={solverCode}
-              language="source.ts"
-              showLineNumbers
-              className="bg-[#1e1e1e]"
-            />
-          </div>
-        )}
-
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-8">
+      {solverCode && (
+        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-8 mb-6">
           <h2 className="text-2xl font-bold text-white mb-4">
-            How to add your solver:
+            Solver Code ({`src/solvers/day${day.padStart(2, '0')}.ts`}):
           </h2>
-          <div className="text-gray-300 space-y-4">
-            <p>
-              Create a file at{' '}
-              <code className="text-cyan-400">
-                src/solvers/day{day.padStart(2, '0')}.ts
-              </code>{' '}
-              with the following structure:
-            </p>
-            <CodeHighlight
-              code={`export async function solve(input: string): Promise<string | number | object> {
+          <CodeHighlight
+            code={solverCode}
+            language="source.ts"
+            showLineNumbers
+            className="bg-[#1e1e1e]"
+          />
+        </div>
+      )}
+
+      <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-8">
+        <h2 className="text-2xl font-bold text-white mb-4">
+          How to add your solver:
+        </h2>
+        <div className="text-gray-300 space-y-4">
+          <p>
+            Create a file at{' '}
+            <code className="text-cyan-400">
+              src/solvers/day{day.padStart(2, '0')}.ts
+            </code>{' '}
+            with the following structure:
+          </p>
+          <CodeHighlight
+            code={`export async function solve(input: string): Promise<string | number | object> {
   // Your solution here
   // The input parameter contains the puzzle input as a string
   
@@ -240,33 +215,32 @@ function SolvePage() {
   // Process and return your answer
   return 'Your answer here';
 }`}
-              language="source.ts"
-              showLineNumbers
-              className="bg-[#1e1e1e]"
-            />
-            <p className="mt-4">
-              Then, import it in{' '}
-              <code className="text-cyan-400">src/solvers/index.ts</code> and
-              add it to the solvers object:
-            </p>
-            <CodeHighlight
-              code={`import * as day${day.padStart(2, '0')} from './day${day.padStart(2, '0')}'
+            language="source.ts"
+            showLineNumbers
+            className="bg-[#1e1e1e]"
+          />
+          <p className="mt-4">
+            Then, import it in{' '}
+            <code className="text-cyan-400">src/solvers/index.ts</code> and add
+            it to the solvers object:
+          </p>
+          <CodeHighlight
+            code={`import * as day${day.padStart(2, '0')} from './day${day.padStart(2, '0')}'
 
 export const solvers = {
   // ... existing solvers
   '${day.padStart(2, '0')}': day${day.padStart(2, '0')},
 }`}
-              language="source.ts"
-              showLineNumbers
-              className="bg-[#1e1e1e]"
-            />
-            <p className="mt-4">
-              The solver function will receive the puzzle input as a string and
-              should return the solution (string, number, or object).
-            </p>
-          </div>
+            language="source.ts"
+            showLineNumbers
+            className="bg-[#1e1e1e]"
+          />
+          <p className="mt-4">
+            The solver function will receive the puzzle input as a string and
+            should return the solution (string, number, or object).
+          </p>
         </div>
       </div>
-    </div>
+    </>
   )
 }

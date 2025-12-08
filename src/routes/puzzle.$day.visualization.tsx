@@ -62,36 +62,5 @@ function VisualizationPage() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-4xl font-bold text-white mb-2">
-            Day {day} - Visualization
-          </h1>
-          <div className="flex gap-4">
-            <a
-              href={`/puzzle/${day}`}
-              className="text-cyan-400 hover:text-cyan-300 underline"
-            >
-              View Puzzle
-            </a>
-            <a
-              href={`/puzzle/${day}/input`}
-              className="text-cyan-400 hover:text-cyan-300 underline"
-            >
-              View Input
-            </a>
-            <a
-              href={`/puzzle/${day}/solve`}
-              className="text-cyan-400 hover:text-cyan-300 underline"
-            >
-              Solve
-            </a>
-          </div>
-        </div>
-        {renderVisualization()}
-      </div>
-    </div>
-  )
+  return <div className="max-w-6xl">{renderVisualization()}</div>
 }
