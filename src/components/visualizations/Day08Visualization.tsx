@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+import { ZoomIn, ZoomOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 
@@ -21,10 +22,46 @@ function distance(a: Point3D, b: Point3D): number {
   return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z)
 }
 
-function buildConnections(
+// Simple union-find implementation for circuit tracking
+class SimpleCircuitManager {
+  private parent: Array<number>
+  private size: Array<number>
+
+  constructor(count: number) {
+    this.parent = Array.from({ length: count }, (_, index) => index)
+    this.size = Array.from({ length: count }, () => 1)
+  }
+
+  private find(node: number): number {
+    if (this.parent[node] !== node) {
+      this.parent[node] = this.find(this.parent[node])
+    }
+    return this.parent[node]
+  }
+
+  union(a: number, b: number): boolean {
+    let rootA = this.find(a)
+    let rootB = this.find(b)
+
+    if (rootA === rootB) {
+      return false // Already in same circuit
+    }
+
+    if (this.size[rootA] < this.size[rootB]) {
+      ;[rootA, rootB] = [rootB, rootA]
+    }
+
+    this.parent[rootB] = rootA
+    this.size[rootA] += this.size[rootB]
+    return true // Successfully merged
+  }
+}
+
+function buildActualConnections(
   points: Array<Point3D>,
   maxConnections: number,
 ): Array<{ i: number; j: number; distance: number }> {
+  // Build all pairs sorted by distance
   const pairs: Array<{ i: number; j: number; distance: number }> = []
 
   for (let i = 0; i < points.length; i++) {
@@ -34,7 +71,23 @@ function buildConnections(
     }
   }
 
-  return pairs.sort((a, b) => a.distance - b.distance).slice(0, maxConnections)
+  pairs.sort((a, b) => a.distance - b.distance)
+
+  // Use union-find to track which connections are actually made
+  const circuitManager = new SimpleCircuitManager(points.length)
+  const actualConnections: Array<{ i: number; j: number; distance: number }> =
+    []
+
+  for (const pair of pairs) {
+    if (actualConnections.length >= maxConnections) break
+
+    // Try to merge - if successful, this connection was actually made
+    if (circuitManager.union(pair.i, pair.j)) {
+      actualConnections.push(pair)
+    }
+  }
+
+  return actualConnections
 }
 
 export function Day08Visualization({ input }: { input: string }) {
@@ -44,6 +97,7 @@ export function Day08Visualization({ input }: { input: string }) {
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
   const animationFrameRef = useRef<number>(0)
   const [numConnections, setNumConnections] = useState(1000)
+  const [showAllConnections, setShowAllConnections] = useState(false)
   const [isRotating, setIsRotating] = useState(true)
   const [connections, setConnections] = useState<
     Array<{ i: number; j: number; distance: number }>
@@ -52,6 +106,14 @@ export function Day08Visualization({ input }: { input: string }) {
   const linesRef = useRef<Array<THREE.Line>>([])
   const isRotatingRef = useRef(isRotating)
   const [pointsLoaded, setPointsLoaded] = useState(false)
+  const cameraDistanceRef = useRef<number>(0)
+  const centerRef = useRef<{ x: number; y: number; z: number }>({
+    x: 0,
+    y: 0,
+    z: 0,
+  })
+  const angleRef = useRef<number>(0)
+  const maxRangeRef = useRef<number>(0)
 
   // Update rotating ref when state changes
   useEffect(() => {
@@ -62,11 +124,18 @@ export function Day08Visualization({ input }: { input: string }) {
     const points = parsePoints(input)
     pointsRef.current = points
     setPointsLoaded(points.length > 0)
-    const maxPossible = (points.length * (points.length - 1)) / 2
-    const actualConnections = Math.min(numConnections, maxPossible)
-    const conns = buildConnections(points, actualConnections)
-    setConnections(conns)
-  }, [input, numConnections])
+
+    if (showAllConnections) {
+      // Show all actual connections (all merged pairs)
+      const maxPossible = (points.length * (points.length - 1)) / 2
+      const conns = buildActualConnections(points, maxPossible)
+      setConnections(conns)
+    } else {
+      // Show only the first N actual connections
+      const conns = buildActualConnections(points, numConnections)
+      setConnections(conns)
+    }
+  }, [input, numConnections, showAllConnections])
 
   // Initial Three.js setup - runs when container is ready and points are loaded
   useEffect(() => {
@@ -120,10 +189,13 @@ export function Day08Visualization({ input }: { input: string }) {
     const centerY = (minY + maxY) / 2
     const centerZ = (minZ + maxZ) / 2
 
+    centerRef.current = { x: centerX, y: centerY, z: centerZ }
+
     const rangeX = maxX - minX
     const rangeY = maxY - minY
     const rangeZ = maxZ - minZ
     const maxRange = Math.max(rangeX, rangeY, rangeZ, 1) // Ensure at least 1
+    maxRangeRef.current = maxRange
 
     // Calculate box size relative to the data range
     // Make boxes visible but not too large
@@ -131,6 +203,7 @@ export function Day08Visualization({ input }: { input: string }) {
 
     // Position camera
     const cameraDistance = maxRange * 2.5
+    cameraDistanceRef.current = cameraDistance
     camera.position.set(
       centerX + cameraDistance,
       centerY + cameraDistance,
@@ -177,21 +250,32 @@ export function Day08Visualization({ input }: { input: string }) {
     linesRef.current = []
 
     // Animation loop
-    let angle = 0
     const animate = () => {
       if (isRotatingRef.current) {
-        angle += 0.005
-        const radius = cameraDistance
-        camera.position.x = centerX + radius * Math.cos(angle)
-        camera.position.z = centerZ + radius * Math.sin(angle)
-        camera.lookAt(centerX, centerY, centerZ)
+        angleRef.current += 0.005
       }
+      const radius = cameraDistanceRef.current
+      const center = centerRef.current
+      camera.position.x = center.x + radius * Math.cos(angleRef.current)
+      camera.position.y = center.y + radius * 0.7 // Slight elevation
+      camera.position.z = center.z + radius * Math.sin(angleRef.current)
+      camera.lookAt(center.x, center.y, center.z)
 
       renderer.render(scene, camera)
       animationFrameRef.current = requestAnimationFrame(animate)
     }
 
     animate()
+
+    // Handle zoom with mousewheel
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9
+      cameraDistanceRef.current = Math.max(
+        maxRange * 0.5,
+        Math.min(maxRange * 5, cameraDistanceRef.current * zoomFactor),
+      )
+    }
 
     // Handle resize
     const handleResize = () => {
@@ -202,9 +286,11 @@ export function Day08Visualization({ input }: { input: string }) {
       renderer.setSize(newWidth, newHeight)
     }
 
+    container.addEventListener('wheel', handleWheel, { passive: false })
     window.addEventListener('resize', handleResize)
 
     return () => {
+      container.removeEventListener('wheel', handleWheel)
       window.removeEventListener('resize', handleResize)
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
@@ -255,12 +341,12 @@ export function Day08Visualization({ input }: { input: string }) {
     })
     linesRef.current = []
 
-    // Create line material
+    // Create line material - make it more visible
     const lineMaterial = new THREE.LineBasicMaterial({
       color: 0xfbbf24,
-      opacity: 0.8,
-      transparent: true,
-      linewidth: 2,
+      opacity: 1.0, // Fully opaque for better visibility
+      transparent: false,
+      linewidth: 3, // Thicker lines
     })
 
     // Add new connections
@@ -284,24 +370,42 @@ export function Day08Visualization({ input }: { input: string }) {
       <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
         <div className="flex flex-col gap-4 mb-4">
           <div className="flex items-center gap-4 flex-wrap">
-            <label className="text-white text-sm font-medium">
-              Connections: {numConnections}
+            <label className="text-white text-sm font-medium flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={showAllConnections}
+                onChange={(e) => setShowAllConnections(e.target.checked)}
+                className="w-4 h-4"
+              />
+              Show All Circuit Connections
             </label>
-            <input
-              type="range"
-              min="0"
-              max={Math.min(
-                5000,
-                (pointsRef.current.length * (pointsRef.current.length - 1)) / 2,
-              )}
-              value={numConnections}
-              onChange={(e) => setNumConnections(Number(e.target.value))}
-              className="flex-1 max-w-xs"
-            />
+            {!showAllConnections && (
+              <>
+                <label className="text-white text-sm font-medium">
+                  First N Connections: {numConnections}
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max={Math.min(
+                    5000,
+                    (pointsRef.current.length *
+                      (pointsRef.current.length - 1)) /
+                      2,
+                  )}
+                  value={numConnections}
+                  onChange={(e) => setNumConnections(Number(e.target.value))}
+                  className="flex-1 max-w-xs"
+                />
+              </>
+            )}
           </div>
           <div className="text-white text-sm">
             Junction Boxes: {pointsRef.current.length} | Showing{' '}
-            {connections.length} connections
+            {connections.length} actual circuit connections
+            {showAllConnections && (
+              <span className="text-cyan-400 ml-2">(all merged pairs)</span>
+            )}
           </div>
         </div>
 
@@ -312,6 +416,34 @@ export function Day08Visualization({ input }: { input: string }) {
               onClick={() => setIsRotating(!isRotating)}
             >
               {isRotating ? 'Pause Rotation' : 'Start Rotation'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const maxRange = maxRangeRef.current
+                if (maxRange === 0) return
+                cameraDistanceRef.current = Math.max(
+                  maxRange * 0.5,
+                  cameraDistanceRef.current * 0.8,
+                )
+              }}
+              title="Zoom In"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const maxRange = maxRangeRef.current
+                if (maxRange === 0) return
+                cameraDistanceRef.current = Math.min(
+                  maxRange * 5,
+                  cameraDistanceRef.current * 1.2,
+                )
+              }}
+              title="Zoom Out"
+            >
+              <ZoomOut className="w-4 h-4" />
             </Button>
           </ButtonGroup>
         </div>
