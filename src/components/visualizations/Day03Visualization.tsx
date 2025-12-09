@@ -73,7 +73,7 @@ function Battery({ digit, isSelected, size = 'large', index }: BatteryProps) {
 
 interface BatterySelection {
   joltage: number
-  selectedIndices: number[]
+  selectedIndices: Array<number>
 }
 
 /**
@@ -88,12 +88,15 @@ const getJoltageWithSelection = (
 
   // dp[i][j] = maximum number we can form using j digits starting from position i
   // and the indices selected to form that number
-  const memo = new Map<string, { maxNum: number; selectedIndices: number[] }>()
+  const memo = new Map<
+    string,
+    { maxNum: number; selectedIndices: Array<number> }
+  >()
 
   const dp = (
     start: number,
     remaining: number,
-  ): { maxNum: number; selectedIndices: number[] } => {
+  ): { maxNum: number; selectedIndices: Array<number> } => {
     // Base case: no digits left to select
     if (remaining === 0) return { maxNum: 0, selectedIndices: [] }
 
@@ -106,7 +109,7 @@ const getJoltageWithSelection = (
     }
 
     let maxNum = -1
-    let bestIndices: number[] = []
+    let bestIndices: Array<number> = []
 
     // Try selecting each possible digit at position >= start
     // We need to leave at least (remaining - 1) digits after the selected one
@@ -237,21 +240,21 @@ export function Day03Visualization({ input }: { input: string }) {
 
         <div className="flex gap-2 mb-4">
           <ButtonGroup>
-            <Button variant="outline" onClick={handlePlayPause}>
+            <Button variant="default" onClick={handlePlayPause}>
               {isPlaying ? 'Pause' : 'Play'}
             </Button>
-            <Button variant="outline" onClick={handleReset}>
+            <Button variant="default" onClick={handleReset}>
               Reset
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => handleBankChange(-1)}
               disabled={currentBankIndex === 0}
             >
               ← Prev Bank
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => handleBankChange(1)}
               disabled={currentBankIndex >= banks.length - 1}
             >

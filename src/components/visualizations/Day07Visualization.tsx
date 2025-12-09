@@ -245,14 +245,14 @@ export function Day07Visualization({ input }: { input: string }) {
 
         <div className="flex gap-2 mb-4">
           <ButtonGroup>
-            <Button variant="outline" onClick={handlePlayPause}>
+            <Button variant="default" onClick={handlePlayPause}>
               {isPlaying ? 'Pause' : 'Play'}
             </Button>
-            <Button variant="outline" onClick={handleReset}>
+            <Button variant="default" onClick={handleReset}>
               Reset
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => handleFrameChange(-1)}
               disabled={currentFrame === 0}
               className="text-white border-slate-600 hover:bg-slate-700"
@@ -260,7 +260,7 @@ export function Day07Visualization({ input }: { input: string }) {
               ← Prev
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => handleFrameChange(1)}
               disabled={currentFrame >= frames.length - 1}
               className="text-white border-slate-600 hover:bg-slate-700"

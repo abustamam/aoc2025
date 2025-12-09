@@ -412,13 +412,13 @@ export function Day08Visualization({ input }: { input: string }) {
         <div className="flex gap-2 mb-4">
           <ButtonGroup>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => setIsRotating(!isRotating)}
             >
               {isRotating ? 'Pause Rotation' : 'Start Rotation'}
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => {
                 const maxRange = maxRangeRef.current
                 if (maxRange === 0) return
@@ -432,7 +432,7 @@ export function Day08Visualization({ input }: { input: string }) {
               <ZoomIn className="w-4 h-4" />
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => {
                 const maxRange = maxRangeRef.current
                 if (maxRange === 0) return

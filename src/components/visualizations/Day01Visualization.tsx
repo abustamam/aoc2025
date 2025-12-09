@@ -474,13 +474,13 @@ export function Day01Visualization({ input }: { input: string }) {
             </label>
             <ButtonGroup>
               <Button
-                variant={part === 1 ? 'default' : 'outline'}
+                variant={part === 1 ? 'default' : 'secondary'}
                 onClick={() => setPart(1)}
               >
                 Part 1
               </Button>
               <Button
-                variant={part === 2 ? 'default' : 'outline'}
+                variant={part === 2 ? 'default' : 'secondary'}
                 onClick={() => setPart(2)}
               >
                 Part 2
@@ -525,21 +525,21 @@ export function Day01Visualization({ input }: { input: string }) {
 
         <div className="flex gap-2 mb-4">
           <ButtonGroup>
-            <Button variant="outline" onClick={handlePlayPause}>
+            <Button variant="default" onClick={handlePlayPause}>
               {isPlaying ? 'Pause' : 'Play'}
             </Button>
-            <Button variant="outline" onClick={handleReset}>
+            <Button variant="default" onClick={handleReset}>
               Reset
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => handleStepChange(-1)}
               disabled={currentStep === 0}
             >
               ← Prev
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => handleStepChange(1)}
               disabled={currentStep >= steps.length - 1}
             >

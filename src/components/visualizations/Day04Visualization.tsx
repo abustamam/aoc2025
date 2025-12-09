@@ -391,21 +391,21 @@ export function Day04Visualization({ input }: { input: string }) {
 
         <div className="flex gap-2 mb-4">
           <ButtonGroup>
-            <Button variant="outline" onClick={handlePlayPause}>
+            <Button variant="default" onClick={handlePlayPause}>
               {isPlaying ? 'Pause' : 'Play'}
             </Button>
-            <Button variant="outline" onClick={handleReset}>
+            <Button variant="default" onClick={handleReset}>
               Reset
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => handleFrameChange(-1)}
               disabled={currentFrame === 0}
             >
               ← Prev
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => handleFrameChange(1)}
               disabled={currentFrame >= frames.length - 1}
             >
