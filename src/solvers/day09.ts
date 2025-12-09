@@ -1,15 +1,5 @@
 type Point = { x: number; y: number }
 
-type CandidateInfo = {
-  point: Point
-  labels: Set<string>
-}
-
-type CandidateSummary = {
-  point: Point
-  labels: string[]
-}
-
 function parsePoints(input: string): Point[] {
   if (!input.trim()) {
     return []
@@ -34,148 +24,61 @@ function parsePoints(input: string): Point[] {
     })
 }
 
-function selectExtreme(
-  points: Point[],
-  predicate: (point: Point) => boolean,
-  isBetter: (candidate: Point, current: Point) => boolean,
-): Point | null {
-  let best: Point | null = null
-  for (const point of points) {
-    if (!predicate(point)) {
-      continue
-    }
-    if (!best || isBetter(point, best)) {
-      best = point
-    }
-  }
-  return best
-}
-
 function inclusiveArea(a: Point, b: Point): number {
   const width = Math.abs(a.x - b.x) + 1
   const height = Math.abs(a.y - b.y) + 1
   return width * height
 }
 
-function buildCandidateSummaries(points: Point[]): CandidateSummary[] {
-  if (points.length === 0) {
-    return []
+function findLargestRectangle(points: Point[]): {
+  area: number
+  pair: [Point, Point] | null
+  comparisons: number
+} {
+  let bestArea = 0
+  let bestPair: [Point, Point] | null = null
+  let comparisons = 0
+
+  for (let i = 0; i < points.length; i++) {
+    for (let j = i + 1; j < points.length; j++) {
+      const area = inclusiveArea(points[i], points[j])
+      comparisons += 1
+      if (area > bestArea) {
+        bestArea = area
+        bestPair = [points[i], points[j]]
+      }
+    }
   }
 
-  const minX = Math.min(...points.map((point) => point.x))
-  const maxX = Math.max(...points.map((point) => point.x))
-  const minY = Math.min(...points.map((point) => point.y))
-  const maxY = Math.max(...points.map((point) => point.y))
-
-  const candidateMap = new Map<string, CandidateInfo>()
-  const registerCandidate = (label: string, candidate: Point | null) => {
-    if (!candidate) {
-      return
-    }
-    const key = `${candidate.x},${candidate.y}`
-    const existing = candidateMap.get(key)
-    if (existing) {
-      existing.labels.add(label)
-      return
-    }
-    candidateMap.set(key, {
-      point: candidate,
-      labels: new Set([label]),
-    })
-  }
-
-  const byTop = (point: Point) => point.y === minY
-  const byBottom = (point: Point) => point.y === maxY
-  const byLeft = (point: Point) => point.x === minX
-  const byRight = (point: Point) => point.x === maxX
-
-  registerCandidate(
-    'top-left',
-    selectExtreme(points, byTop, (candidate, current) => candidate.x < current.x),
-  )
-  registerCandidate(
-    'top-right',
-    selectExtreme(points, byTop, (candidate, current) => candidate.x > current.x),
-  )
-  registerCandidate(
-    'bottom-left',
-    selectExtreme(points, byBottom, (candidate, current) => candidate.x < current.x),
-  )
-  registerCandidate(
-    'bottom-right',
-    selectExtreme(points, byBottom, (candidate, current) => candidate.x > current.x),
-  )
-  registerCandidate(
-    'left-top',
-    selectExtreme(points, byLeft, (candidate, current) => candidate.y < current.y),
-  )
-  registerCandidate(
-    'left-bottom',
-    selectExtreme(points, byLeft, (candidate, current) => candidate.y > current.y),
-  )
-  registerCandidate(
-    'right-top',
-    selectExtreme(points, byRight, (candidate, current) => candidate.y < current.y),
-  )
-  registerCandidate(
-    'right-bottom',
-    selectExtreme(points, byRight, (candidate, current) => candidate.y > current.y),
-  )
-
-  return Array.from(candidateMap.values()).map((info) => ({
-    point: info.point,
-    labels: Array.from(info.labels).sort(),
-  }))
+  return { area: bestArea, pair: bestPair, comparisons }
 }
 
 export async function solve(input: string): Promise<string | number | object> {
   const points = parsePoints(input)
 
   if (points.length < 2) {
-    return { part1: 0, details: { candidates: [], bestPair: null } }
-  }
-
-  const candidates = buildCandidateSummaries(points)
-
-  let maxArea = 0
-  let bestPair:
-    | {
-        first: CandidateSummary
-        second: CandidateSummary
-      }
-    | null = null
-
-  for (let i = 0; i < candidates.length; i++) {
-    for (let j = i + 1; j < candidates.length; j++) {
-      const area = inclusiveArea(candidates[i].point, candidates[j].point)
-      if (area > maxArea) {
-        maxArea = area
-        bestPair = {
-          first: candidates[i],
-          second: candidates[j],
-        }
-      }
+    return {
+      part1: 0,
+      details: {
+        points: points.length,
+        comparisons: 0,
+        bestPair: null,
+      },
     }
   }
 
+  const { area, pair, comparisons } = findLargestRectangle(points)
+
   return {
-    part1: maxArea,
+    part1: area,
     details: {
-      candidates: candidates.map((candidate) => ({
-        point: candidate.point,
-        labels: candidate.labels,
-      })),
-      bestPair: bestPair
+      points: points.length,
+      comparisons,
+      bestPair: pair
         ? {
-            area: maxArea,
-            first: {
-              point: bestPair.first.point,
-              labels: bestPair.first.labels,
-            },
-            second: {
-              point: bestPair.second.point,
-              labels: bestPair.second.labels,
-            },
+            area,
+            first: pair[0],
+            second: pair[1],
           }
         : null,
     },
