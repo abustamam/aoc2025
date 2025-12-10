@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { JoltagePlanResult, LightPlan, Machine } from '@/solvers/day10'
 import {
   computeLightPlan,
@@ -108,20 +108,6 @@ function buildJoltageFrames(
   return frames
 }
 
-function deriveLightUsage(
-  machine: Machine,
-  plan: LightPlan | null,
-): Array<number> {
-  if (!plan) {
-    return new Array(machine.buttonCounterSets.length).fill(0)
-  }
-  const usage = new Array(machine.buttonCounterSets.length).fill(0)
-  plan.sequence.forEach((index) => {
-    usage[index] += 1
-  })
-  return usage
-}
-
 export function Day10Visualization({ input }: { input: string }) {
   const { machines, error } = useMemo(() => {
     try {
@@ -140,11 +126,86 @@ export function Day10Visualization({ input }: { input: string }) {
   const [speed, setSpeed] = useState(6)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentFrame, setCurrentFrame] = useState(0)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | undefined>(undefined)
+
+  // Interactive game state
+  const [interactiveLightState, setInteractiveLightState] = useState(0)
+  const [interactiveCounters, setInteractiveCounters] = useState<Array<number>>(
+    [],
+  )
+  const [pressedButtonIndex, setPressedButtonIndex] = useState<number | null>(
+    null,
+  )
+  const [pressedButtonTimeout, setPressedButtonTimeout] =
+    useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     setSelectedMachineIndex(0)
   }, [machines.length])
+
+  const selectedMachine: Machine | null =
+    machines.at(selectedMachineIndex) ?? null
+
+  // Reset interactive state when machine or part changes
+  useEffect(() => {
+    if (selectedMachine) {
+      setInteractiveLightState(0)
+      setInteractiveCounters(
+        new Array(selectedMachine.joltageTargets.length).fill(0),
+      )
+      setPressedButtonIndex(null)
+    }
+    return () => {
+      if (pressedButtonTimeout) {
+        clearTimeout(pressedButtonTimeout)
+      }
+    }
+  }, [selectedMachineIndex, part, selectedMachine])
+
+  // Handle button press for interactive mode
+  const handleButtonPress = useCallback(
+    (buttonIndex: number) => {
+      if (!selectedMachine) return
+
+      // Set pressed state with visual feedback
+      setPressedButtonIndex(buttonIndex)
+      const timeout = setTimeout(() => {
+        setPressedButtonIndex(null)
+      }, 200)
+      setPressedButtonTimeout(timeout)
+
+      if (part === 1) {
+        // Toggle lights using XOR
+        const mask = selectedMachine.buttonMasks[buttonIndex]
+        setInteractiveLightState((prev) => prev ^ mask)
+      } else {
+        // Increment counters
+        const affected = selectedMachine.buttonCounterSets[buttonIndex]
+        setInteractiveCounters((prev) => {
+          const next = [...prev]
+          for (const counterIdx of affected) {
+            if (counterIdx < next.length) {
+              next[counterIdx] += 1
+            }
+          }
+          return next
+        })
+      }
+    },
+    [selectedMachine, part],
+  )
+
+  // Check if interactive puzzle is solved
+  const isInteractiveSolved = useMemo(() => {
+    if (!selectedMachine) return false
+    if (part === 1) {
+      return interactiveLightState === selectedMachine.targetMask
+    } else {
+      return selectedMachine.joltageTargets.every(
+        (target, idx) => interactiveCounters[idx] === target,
+      )
+    }
+  }, [selectedMachine, part, interactiveLightState, interactiveCounters])
 
   const lightPlans = useMemo(
     () =>
@@ -170,15 +231,8 @@ export function Day10Visualization({ input }: { input: string }) {
     [machines],
   )
 
-  const selectedMachine: Machine | null =
-    machines.at(selectedMachineIndex) ?? null
   const selectedLightPlan = lightPlans[selectedMachineIndex] ?? null
   const selectedJoltagePlan = joltagePlans[selectedMachineIndex] ?? null
-
-  const lightUsage = useMemo(() => {
-    if (!selectedMachine) return [] as Array<number>
-    return deriveLightUsage(selectedMachine, selectedLightPlan)
-  }, [selectedMachine, selectedLightPlan])
 
   const lightFrames = useMemo(() => {
     if (!selectedMachine) return [] as Array<LightFrame>
@@ -285,35 +339,432 @@ export function Day10Visualization({ input }: { input: string }) {
   }
 
   const lightsMatch =
-    part === 1 &&
-    lightFrame !== null &&
-    machine.targetMask === lightFrame.state
-
-  const frameDescription =
-    fallbackFrame?.description ?? 'Awaiting simulation data.'
+    part === 1 && lightFrame !== null && machine.targetMask === lightFrame.state
 
   return (
     <div className="space-y-6">
+      {/* Unified Machine Console */}
+      <div
+        className="border-4 border-slate-700 rounded-2xl p-8 shadow-2xl relative"
+        style={{
+          background: `
+              repeating-linear-gradient(
+                0deg,
+                #64748b 0px,
+                #64748b 1px,
+                #475569 1px,
+                #475569 2px
+              ),
+              linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%)
+            `,
+          backgroundSize: '100% 3px, 100% 100%',
+          boxShadow:
+            'inset 0 0 100px rgba(0, 0, 0, 0.3), 0 8px 32px rgba(0, 0, 0, 0.5)',
+        }}
+      >
+        {/* Machine Toggle Switch - Top Right */}
+        <div className="absolute top-6 right-6">
+          <button
+            onClick={() => setPart(part === 1 ? 2 : 1)}
+            className="relative focus:outline-none"
+          >
+            {/* Square Metallic Faceplate */}
+            <div
+              className="relative w-20 h-20"
+              style={{
+                background: `
+                    repeating-linear-gradient(
+                      45deg,
+                      #94a3b8 0px,
+                      #94a3b8 1px,
+                      #64748b 1px,
+                      #64748b 2px
+                    ),
+                    linear-gradient(135deg, #cbd5e1 0%, #94a3b8 50%, #64748b 100%)
+                  `,
+                backgroundSize: '100% 4px, 100% 100%',
+                boxShadow:
+                  'inset 0 1px 2px rgba(255, 255, 255, 0.4), inset 0 -1px 2px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.4)',
+                borderRadius: '2px',
+              }}
+            >
+              {/* Corner Screws */}
+              <div
+                className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full"
+                style={{
+                  background:
+                    'radial-gradient(circle at 30% 30%, #475569, #334155)',
+                  boxShadow:
+                    'inset 0 1px 1px rgba(0, 0, 0, 0.5), 0 0 1px rgba(0, 0, 0, 0.3)',
+                }}
+              >
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-0.5 h-0.5 border-t border-l border-slate-900" />
+              </div>
+              <div
+                className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full"
+                style={{
+                  background:
+                    'radial-gradient(circle at 30% 30%, #475569, #334155)',
+                  boxShadow:
+                    'inset 0 1px 1px rgba(0, 0, 0, 0.5), 0 0 1px rgba(0, 0, 0, 0.3)',
+                }}
+              >
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-0.5 h-0.5 border-t border-l border-slate-900" />
+              </div>
+              <div
+                className="absolute bottom-1 left-1 w-1.5 h-1.5 rounded-full"
+                style={{
+                  background:
+                    'radial-gradient(circle at 30% 30%, #475569, #334155)',
+                  boxShadow:
+                    'inset 0 1px 1px rgba(0, 0, 0, 0.5), 0 0 1px rgba(0, 0, 0, 0.3)',
+                }}
+              >
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-0.5 h-0.5 border-t border-l border-slate-900" />
+              </div>
+              <div
+                className="absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full"
+                style={{
+                  background:
+                    'radial-gradient(circle at 30% 30%, #475569, #334155)',
+                  boxShadow:
+                    'inset 0 1px 1px rgba(0, 0, 0, 0.5), 0 0 1px rgba(0, 0, 0, 0.3)',
+                }}
+              >
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-0.5 h-0.5 border-t border-l border-slate-900" />
+              </div>
+
+              {/* Central Bushing Area */}
+              <div
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full"
+                style={{
+                  background:
+                    'radial-gradient(circle at 30% 30%, #475569, #334155, #1e293b)',
+                  boxShadow:
+                    'inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3)',
+                  border: '2px solid #1e293b',
+                }}
+              />
+
+              {/* Bat Handle Lever - Pivots from center bushing */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <div
+                  className={`transform ${
+                    part === 2 ? 'rotate-[-45deg]' : 'rotate-[45deg]'
+                  }`}
+                  style={{
+                    transition: 'none', // No animation - instant flick
+                    transformOrigin: 'center bottom',
+                  }}
+                >
+                  {/* Orange Ring at Base (where lever enters bushing) */}
+                  <div
+                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-1 rounded-full"
+                    style={{
+                      background: 'radial-gradient(ellipse, #fb923c, #ea580c)',
+                      boxShadow: 'inset 0 1px 1px rgba(0, 0, 0, 0.3)',
+                    }}
+                  />
+                  {/* Lever Shaft - Metallic, extends upward from bushing */}
+                  <div
+                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-7 rounded-full"
+                    style={{
+                      background:
+                        'linear-gradient(to bottom, #e2e8f0, #cbd5e1, #94a3b8)',
+                      boxShadow:
+                        '0 1px 2px rgba(0, 0, 0, 0.3), inset 0 0 2px rgba(255, 255, 255, 0.3)',
+                    }}
+                  />
+                  {/* Lever Handle (Bullet Tip) - Metallic */}
+                  <div
+                    className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full"
+                    style={{
+                      background:
+                        'radial-gradient(circle at 30% 30%, #f1f5f9, #e2e8f0, #cbd5e1)',
+                      boxShadow:
+                        '0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.5)',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Embossed Text on Faceplate */}
+              <div
+                className="absolute top-2 left-1/2 transform -translate-x-1/2 text-[7px] font-bold tracking-wider"
+                style={{
+                  color: '#1e293b',
+                  textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                MODE
+              </div>
+            </div>
+
+            {/* Dark Housing Behind */}
+            <div
+              className="absolute top-2 left-2 w-20 h-20 bg-slate-900 border border-slate-800 rounded-sm -z-10"
+              style={{
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)',
+              }}
+            />
+          </button>
+        </div>
+
+        {/* Big Red Reset Button - Top Left */}
+        <button
+          onClick={() => {
+            setInteractiveLightState(0)
+            setInteractiveCounters(
+              new Array(selectedMachine.joltageTargets.length).fill(0),
+            )
+          }}
+          className="absolute top-2 left-6 w-24 h-24 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-400/50 focus:ring-offset-2 focus:ring-offset-slate-900 active:translate-y-0.5"
+        >
+          {/* Black Bezel/Ring - Raised from panel, thicker */}
+          <div
+            className="absolute inset-0 rounded-full bg-black"
+            style={{
+              boxShadow:
+                '0 2px 4px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.05)',
+            }}
+          >
+            {/* Red Lens Center - Flat with slight convex effect */}
+            <div
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-red-600"
+              style={{
+                background:
+                  'radial-gradient(circle at 30% 30%, #f87171, #ef4444, #dc2626)',
+                boxShadow:
+                  '0 0 15px rgba(239, 68, 68, 0.9), 0 0 30px rgba(239, 68, 68, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.4), inset 0 -1px 2px rgba(0, 0, 0, 0.2)',
+              }}
+            >
+              {/* Subtle lens highlight */}
+              <div className="absolute top-2 left-2 w-4 h-4 rounded-full bg-white/50 blur-[1px]" />
+            </div>
+          </div>
+        </button>
+
+        {/* Indicator Lights Section - Always visible */}
+        <div className="mb-8 mt-20">
+          <div className="bg-slate-950/50 border-2 border-slate-800 rounded-lg p-6">
+            <div className="flex flex-wrap gap-4 justify-center">
+              {maskToArray(
+                isPlaying && lightFrame
+                  ? lightFrame.state
+                  : interactiveLightState,
+                machine.numLights,
+              ).map((on, idx) => {
+                return (
+                  <div key={idx} className="flex flex-col items-center">
+                    {/* LED Light */}
+                    <div
+                      className={`relative w-16 h-16 rounded-full border-2 transition-all duration-300 ${
+                        on
+                          ? 'border-emerald-400/60 bg-emerald-500'
+                          : 'border-slate-600 bg-slate-800'
+                      }`}
+                      style={{
+                        boxShadow: on
+                          ? '0 0 20px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.4), inset 0 0 20px rgba(34, 197, 94, 0.3)'
+                          : 'inset 0 4px 8px rgba(0, 0, 0, 0.5)',
+                      }}
+                    >
+                      {/* LED inner glow */}
+                      {on && (
+                        <div className="absolute inset-2 rounded-full bg-emerald-400/60 blur-sm" />
+                      )}
+                      {/* LED center */}
+                      <div
+                        className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full ${
+                          on ? 'bg-emerald-300' : 'bg-slate-700'
+                        }`}
+                        style={{
+                          boxShadow: on
+                            ? '0 0 12px rgba(34, 197, 94, 1), inset 0 0 8px rgba(255, 255, 255, 0.3)'
+                            : 'inset 0 2px 4px rgba(0, 0, 0, 0.5)',
+                        }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            {(isInteractiveSolved || lightsMatch) && part === 1 && (
+              <div className="mt-4 text-center">
+                <div className="inline-block w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Joltage Gauges Section - Always visible */}
+        <div className="mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {joltageTargets.map((target, idx) => {
+              const value =
+                isPlaying && joltageFrame
+                  ? (joltageFrame.counters[idx] ?? 0)
+                  : (interactiveCounters[idx] ?? 0)
+              const pct =
+                target === 0
+                  ? value === 0
+                    ? 100
+                    : 0
+                  : Math.min(100, (value / target) * 100)
+              const angle = (pct / 100) * 180 - 90 // -90 to 90 degrees
+              const isComplete = value === target
+              return (
+                <div
+                  key={`gauge-${idx}`}
+                  className="bg-slate-950/50 border-2 border-slate-800 rounded-lg p-4"
+                >
+                  {/* Circular Gauge */}
+                  <div className="relative w-24 h-24 mx-auto">
+                    <svg viewBox="0 0 100 60" className="w-full h-full">
+                      {/* Gauge background arc */}
+                      <path
+                        d="M 10 50 A 40 40 0 0 1 90 50"
+                        fill="none"
+                        stroke="#1e293b"
+                        strokeWidth="8"
+                        strokeLinecap="round"
+                      />
+                      {/* Gauge fill arc */}
+                      <path
+                        d="M 10 50 A 40 40 0 0 1 90 50"
+                        fill="none"
+                        stroke={isComplete ? '#22c55e' : '#3b82f6'}
+                        strokeWidth="8"
+                        strokeLinecap="round"
+                        strokeDasharray={`${(pct / 100) * 125.66} 125.66`}
+                        className="transition-all duration-500"
+                      />
+                      {/* Needle */}
+                      <line
+                        x1="50"
+                        y1="50"
+                        x2={50 + Math.cos(((angle - 90) * Math.PI) / 180) * 35}
+                        y2={50 + Math.sin(((angle - 90) * Math.PI) / 180) * 35}
+                        stroke={isComplete ? '#22c55e' : '#fbbf24'}
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        className="transition-all duration-500"
+                      />
+                      {/* Center dot */}
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="3"
+                        fill={isComplete ? '#22c55e' : '#fbbf24'}
+                      />
+                    </svg>
+                    {/* Value display - hidden, just visual feedback */}
+                    {isComplete && (
+                      <div className="absolute bottom-0 left-0 right-0 text-center">
+                        <div className="w-2 h-2 rounded-full bg-emerald-400 mx-auto animate-pulse" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Control Panel - Buttons */}
+        <div>
+          <div className="bg-slate-950/50 border-2 border-slate-800 rounded-lg p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+              {buttonSets.map((_, idx) => {
+                const isPressed = pressedButtonIndex === idx
+                const isSimulatedActive = currentButtonIndex === idx
+                return (
+                  <div
+                    key={`button-${idx}`}
+                    className="flex flex-col items-center gap-2"
+                  >
+                    {/* LED Indicator */}
+                    <div className="relative">
+                      <div
+                        className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${
+                          isPressed || isSimulatedActive
+                            ? 'bg-blue-500'
+                            : 'bg-slate-700'
+                        }`}
+                        style={{
+                          boxShadow:
+                            isPressed || isSimulatedActive
+                              ? '0 0 8px rgba(59, 130, 246, 0.9), 0 0 16px rgba(59, 130, 246, 0.5)'
+                              : 'none',
+                        }}
+                      />
+                    </div>
+
+                    {/* Blue Button - Industrial Style with Bezel */}
+                    <button
+                      onClick={() => handleButtonPress(idx)}
+                      className={`relative w-20 h-20 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                        isPressed ? 'translate-y-0.5' : ''
+                      }`}
+                    >
+                      {/* Black Bezel/Ring - Raised from panel, thicker */}
+                      <div
+                        className="absolute inset-0 rounded-full bg-black"
+                        style={{
+                          boxShadow:
+                            '0 2px 4px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.05)',
+                        }}
+                      >
+                        {/* Colored Lens Center - Flat with slight convex effect */}
+                        <div
+                          className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full transition-all duration-200 ${
+                            isPressed || isSimulatedActive
+                              ? 'bg-blue-500'
+                              : 'bg-blue-600'
+                          }`}
+                          style={{
+                            background:
+                              isPressed || isSimulatedActive
+                                ? 'radial-gradient(circle at 30% 30%, #60a5fa, #3b82f6, #2563eb)'
+                                : 'radial-gradient(circle at 30% 30%, #3b82f6, #2563eb, #1e40af)',
+                            boxShadow:
+                              isPressed || isSimulatedActive
+                                ? '0 0 12px rgba(59, 130, 246, 0.9), 0 0 24px rgba(59, 130, 246, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.4), inset 0 -1px 2px rgba(0, 0, 0, 0.2)'
+                                : '0 0 10px rgba(59, 130, 246, 0.7), 0 0 20px rgba(59, 130, 246, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3), inset 0 -1px 2px rgba(0, 0, 0, 0.3)',
+                          }}
+                        >
+                          {/* Subtle lens highlight */}
+                          <div className="absolute top-1.5 left-1.5 w-3 h-3 rounded-full bg-white/50 blur-[1px]" />
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Success Indicators - Subtle */}
+        {isInteractiveSolved && (
+          <div className="mt-6 flex items-center justify-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+            <div
+              className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"
+              style={{ animationDelay: '0.2s' }}
+            />
+            <div
+              className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"
+              style={{ animationDelay: '0.4s' }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Controls Panel - Bottom */}
       <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
         <div className="flex flex-col gap-4 mb-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <label className="text-white text-sm font-medium">Part</label>
-            <ButtonGroup>
-              <Button
-                variant={part === 1 ? 'default' : 'secondary'}
-                onClick={() => setPart(1)}
-              >
-                Indicator Lights
-              </Button>
-              <Button
-                variant={part === 2 ? 'default' : 'secondary'}
-                onClick={() => setPart(2)}
-              >
-                Joltage Counters
-              </Button>
-            </ButtonGroup>
-          </div>
-
           <div className="flex flex-wrap items-center gap-4">
             <label className="text-white text-sm font-medium">
               Machine {selectedMachineIndex + 1} / {machines.length}
@@ -385,7 +836,9 @@ export function Day10Visualization({ input }: { input: string }) {
             </div>
           </div>
           <div className="bg-slate-900/40 border border-slate-700 rounded-lg p-4 text-white text-sm space-y-2">
-            <div className="font-semibold text-emerald-300">Joltage Counters</div>
+            <div className="font-semibold text-emerald-300">
+              Joltage Counters
+            </div>
             <div>Counters: {joltageTargets.length}</div>
             <div>
               Min Presses:{' '}
@@ -404,7 +857,7 @@ export function Day10Visualization({ input }: { input: string }) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 mb-6">
+        <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-3">
             <ButtonGroup>
               <Button
@@ -430,9 +883,7 @@ export function Day10Visualization({ input }: { input: string }) {
               </Button>
               <Button
                 variant="default"
-                onClick={() =>
-                  setCurrentFrame((prev) => Math.max(prev - 1, 0))
-                }
+                onClick={() => setCurrentFrame((prev) => Math.max(prev - 1, 0))}
                 disabled={currentFrame === 0}
               >
                 ← Prev
@@ -464,147 +915,6 @@ export function Day10Visualization({ input }: { input: string }) {
             }}
             className="w-full"
           />
-        </div>
-
-        {activeFrames.length > 0 ? (
-          <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-            <div className="bg-slate-900/40 border border-slate-700 rounded-lg p-4 space-y-4">
-              <div className="text-white font-semibold">
-                {part === 1 ? 'Indicator Lights' : 'Joltage Counters'}
-              </div>
-
-              {part === 1 && lightFrame && (
-                <>
-                  <div className="space-y-2">
-                    <div className="text-sm text-slate-300">Current Lights</div>
-                    <div className="flex flex-wrap gap-2">
-                      {maskToArray(
-                        lightFrame.state,
-                        machine.numLights,
-                      ).map((on, idx) => (
-                        <div
-                          key={idx}
-                          className={`w-8 h-8 rounded-full border transition-colors text-xs flex items-center justify-center font-mono ${
-                            on
-                              ? 'bg-cyan-400/80 border-cyan-200 text-slate-900'
-                              : 'bg-slate-800 border-slate-600 text-slate-400'
-                          }`}
-                        >
-                          {idx}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="text-sm text-slate-300">Target</div>
-                    <div className="flex flex-wrap gap-2">
-                      {maskToArray(
-                        machine.targetMask,
-                        machine.numLights,
-                      ).map((on, idx) => (
-                        <div
-                          key={`target-${idx}`}
-                          className={`w-8 h-8 rounded-full border text-xs flex items-center justify-center font-mono ${
-                            on
-                              ? 'border-emerald-300 text-emerald-200'
-                              : 'border-slate-600 text-slate-500'
-                          }`}
-                        >
-                          {on ? '#' : '.'}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div
-                    className={`text-sm font-medium ${
-                      lightsMatch ? 'text-emerald-300' : 'text-amber-300'
-                    }`}
-                  >
-                    {lightsMatch
-                      ? 'Indicator lights match the goal configuration!'
-                      : 'Still searching for the correct configuration...'}
-                  </div>
-                </>
-              )}
-
-              {part === 2 && joltageFrame && (
-                <div className="space-y-3">
-                  {joltageTargets.map((target, idx) => {
-                    const value = joltageFrame.counters[idx] ?? 0
-                    const pct =
-                      target === 0 ? (value === 0 ? 100 : 0) : Math.min(100, (value / target) * 100)
-                    return (
-                      <div key={`counter-${idx}`}>
-                        <div className="flex justify-between text-xs text-white mb-1">
-                          <span>Counter {idx}</span>
-                          <span>
-                            {value} / {target}
-                          </span>
-                        </div>
-                        <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
-                          <div
-                            className="h-full bg-emerald-400 transition-all"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              <div className="text-slate-200 text-sm">
-                {frameDescription}
-              </div>
-            </div>
-
-            <div className="bg-slate-900/40 border border-slate-700 rounded-lg p-4 space-y-4">
-              <div className="text-white font-semibold flex items-center justify-between">
-                <span>Buttons</span>
-                <span className="text-xs text-slate-400">
-                  Highlight shows currently pressed button.
-                </span>
-              </div>
-              <div className="space-y-2">
-                {buttonSets.map((indices, idx) => {
-                  const isActive = currentButtonIndex === idx
-                  const pressesForLights = lightUsage[idx] ?? 0
-                  const pressesForJoltage =
-                    selectedJoltagePlan?.buttonPresses[idx] ?? 0
-                  return (
-                    <div
-                      key={`button-${idx}`}
-                      className={`rounded border px-3 py-2 text-sm flex flex-col gap-1 ${
-                        isActive
-                          ? 'border-cyan-300 bg-cyan-300/10'
-                          : 'border-slate-700 bg-slate-800/40'
-                      }`}
-                    >
-                      <div className="flex justify-between text-white font-mono">
-                        <span>{formatButton(indices)}</span>
-                        <span># {idx}</span>
-                      </div>
-                      <div className="text-xs text-slate-300 flex justify-between">
-                        <span>Lights: {pressesForLights}</span>
-                        <span>Joltage: {pressesForJoltage}</span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="text-amber-200">
-            Unable to build frames for this machine.
-          </div>
-        )}
-
-        <div className="mt-6 text-xs text-slate-400">
-          Indicator lights use cyan (on) vs slate (off). Joltage counters fill
-          toward their targets in emerald. Use the playback controls or slider
-          to inspect each button press.
         </div>
       </div>
     </div>
