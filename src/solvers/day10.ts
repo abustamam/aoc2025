@@ -1,9 +1,19 @@
-type Machine = {
+export type Machine = {
   numLights: number
   targetMask: number
-  buttonMasks: number[]
-  buttonCounterSets: number[][]
-  joltageTargets: number[]
+  buttonMasks: Array<number>
+  buttonCounterSets: Array<Array<number>>
+  joltageTargets: Array<number>
+}
+
+export type LightPlan = {
+  presses: number
+  sequence: Array<number>
+}
+
+export type JoltagePlanResult = {
+  totalPresses: number
+  buttonPresses: Array<number>
 }
 
 class Fraction {
@@ -117,14 +127,14 @@ type PivotRow = {
   rhs: Fraction
   minAllowed: Fraction
   maxAllowed: Fraction
-  coeffs: Fraction[]
-  minSuffix: Fraction[]
-  maxSuffix: Fraction[]
+  coeffs: Array<Fraction>
+  minSuffix: Array<Fraction>
+  maxSuffix: Array<Fraction>
   sourceRow: number
 }
 
-function parseInput(rawInput: string): Machine[] {
-  const machines: Machine[] = []
+export function parseInput(rawInput: string): Array<Machine> {
+  const machines: Array<Machine> = []
   const lines = rawInput
     .split('\n')
     .map((line) => line.trim())
@@ -174,8 +184,8 @@ function parseMachine(line: string, lineNumber: number): Machine {
   }
 
   const buttonMatches = [...line.matchAll(/\(([^)]*)\)/g)]
-  const buttonMasks: number[] = []
-  const buttonCounterSets: number[][] = []
+  const buttonMasks: Array<number> = []
+  const buttonCounterSets: Array<Array<number>> = []
 
   for (const match of buttonMatches) {
     const rawIndices = match[1]
@@ -221,7 +231,7 @@ function parseMachine(line: string, lineNumber: number): Machine {
 
 function bfsMinPresses(
   numLights: number,
-  buttonMasks: number[],
+  buttonMasks: Array<number>,
   targetMask: number,
 ): number {
   if (targetMask === 0) {
@@ -262,11 +272,82 @@ function bfsMinPresses(
   return Number.POSITIVE_INFINITY
 }
 
+export function computeLightPlan(machine: Machine): LightPlan {
+  const { numLights, buttonMasks, targetMask } = machine
+
+  if (targetMask === 0) {
+    return { presses: 0, sequence: [] }
+  }
+
+  if (buttonMasks.length === 0) {
+    throw new Error('Machine cannot be configured with the provided buttons')
+  }
+
+  const totalStates = 1 << numLights
+  const dist = new Int16Array(totalStates)
+  dist.fill(-1)
+  const prev = new Int32Array(totalStates)
+  prev.fill(-1)
+  const usedButton = new Int16Array(totalStates)
+  usedButton.fill(-1)
+  const queue = new Uint32Array(totalStates)
+  let head = 0
+  let tail = 0
+
+  dist[0] = 0
+  queue[tail++] = 0
+
+  while (head < tail) {
+    const state = queue[head++]
+    if (state === targetMask) {
+      break
+    }
+    const nextSteps = dist[state] + 1
+    for (let bIndex = 0; bIndex < buttonMasks.length; bIndex++) {
+      const mask = buttonMasks[bIndex]
+      const nextState = state ^ mask
+      if (dist[nextState] !== -1) {
+        continue
+      }
+      dist[nextState] = nextSteps
+      prev[nextState] = state
+      usedButton[nextState] = bIndex
+      queue[tail++] = nextState
+      if (nextState === targetMask) {
+        head = tail
+        break
+      }
+    }
+  }
+
+  if (dist[targetMask] === -1) {
+    throw new Error('Machine cannot be configured with the provided buttons')
+  }
+
+  const sequence: Array<number> = []
+  let state = targetMask
+  while (state !== 0) {
+    const buttonIndex = usedButton[state]
+    if (buttonIndex === -1) {
+      break
+    }
+    sequence.push(buttonIndex)
+    state = prev[state]
+  }
+
+  sequence.reverse()
+
+  return {
+    presses: dist[targetMask],
+    sequence,
+  }
+}
+
 function buildAugmentedMatrix(
-  buttonCounterSets: number[][],
+  buttonCounterSets: Array<Array<number>>,
   counterCount: number,
-  targets: number[],
-): Fraction[][] {
+  targets: Array<number>,
+): Array<Array<Fraction>> {
   const cols = buttonCounterSets.length
   const matrix = Array.from({ length: counterCount }, () =>
     Array.from({ length: cols + 1 }, () => Fraction.ZERO),
@@ -286,9 +367,9 @@ function buildAugmentedMatrix(
 }
 
 function rref(
-  matrix: Fraction[][],
+  matrix: Array<Array<Fraction>>,
   variableCount: number,
-): { matrix: Fraction[][]; pivotColumnsByRow: number[] } {
+): { matrix: Array<Array<Fraction>>; pivotColumnsByRow: Array<number> } {
   const rowCount = matrix.length
   const pivotColumnsByRow = new Array<number>(rowCount).fill(-1)
   let currentRow = 0
@@ -332,9 +413,9 @@ function rref(
 }
 
 function computeVariableUpperBounds(
-  buttonCounterSets: number[][],
-  targets: number[],
-): number[] {
+  buttonCounterSets: Array<Array<number>>,
+  targets: Array<number>,
+): Array<number> {
   return buttonCounterSets.map((counters) => {
     if (counters.length === 0) {
       return 0
@@ -350,24 +431,31 @@ function computeVariableUpperBounds(
   })
 }
 
-function minPressesForJoltage(machine: Machine): number {
+export function minPressesForJoltage(machine: Machine): JoltagePlanResult {
   const targets = machine.joltageTargets
-  if (targets.length === 0) {
-    return 0
-  }
   const buttonSets = machine.buttonCounterSets
+
+  if (targets.length === 0) {
+    return {
+      totalPresses: 0,
+      buttonPresses: new Array(buttonSets.length).fill(0),
+    }
+  }
+
   if (buttonSets.length === 0) {
     if (targets.every((value) => value === 0)) {
-      return 0
+      return { totalPresses: 0, buttonPresses: [] }
     }
-    throw new Error('Machine has joltage requirements but no buttons to configure them')
+    throw new Error(
+      'Machine has joltage requirements but no buttons to configure them',
+    )
   }
 
   const augmented = buildAugmentedMatrix(buttonSets, targets.length, targets)
   const { matrix, pivotColumnsByRow } = rref(augmented, buttonSets.length)
   const upperBounds = computeVariableUpperBounds(buttonSets, targets)
 
-  const pivotRows: PivotRow[] = []
+  const pivotRows: Array<PivotRow> = []
   const pivotColumnSet = new Set<number>()
 
   for (let row = 0; row < matrix.length; row++) {
@@ -400,7 +488,7 @@ function minPressesForJoltage(machine: Machine): number {
     })
   }
 
-  const freeColumns: number[] = []
+  const freeColumns: Array<number> = []
   for (let col = 0; col < buttonSets.length; col++) {
     if (!pivotColumnSet.has(col)) {
       freeColumns.push(col)
@@ -409,8 +497,10 @@ function minPressesForJoltage(machine: Machine): number {
 
   const freeCount = freeColumns.length
   if (pivotRows.length === 0) {
-    // No constraints; minimal presses is zero because we can leave all counters at zero.
-    return 0
+    return {
+      totalPresses: 0,
+      buttonPresses: new Array(buttonSets.length).fill(0),
+    }
   }
 
   const freeVarInfos = freeColumns.map((col, idx) => ({
@@ -428,9 +518,10 @@ function minPressesForJoltage(machine: Machine): number {
 
   const freeBounds = freeVarInfos.map((info) => info.bound)
   const order = freeVarInfos.map((info) => info.originalIndex)
+  const orderedColumns = order.map((originalIdx) => freeColumns[originalIdx])
 
   for (const row of pivotRows) {
-    const coeffs: Fraction[] = []
+    const coeffs: Array<Fraction> = []
     for (const idx of order) {
       const column = freeColumns[idx]
       coeffs.push(matrix[row.sourceRow][column])
@@ -462,6 +553,7 @@ function minPressesForJoltage(machine: Machine): number {
   }
 
   if (freeCount === 0) {
+    const buttonPresses = new Array(buttonSets.length).fill(0)
     let total = 0
     for (const row of pivotRows) {
       if (!row.rhs.isInteger()) {
@@ -472,16 +564,20 @@ function minPressesForJoltage(machine: Machine): number {
       if (presses < 0 || presses > bound) {
         throw new Error('Machine joltage solution violates button bounds')
       }
+      buttonPresses[row.pivotCol] = presses
       total += presses
     }
-    return total
+    return { totalPresses: total, buttonPresses }
   }
 
   const assignedContribution = pivotRows.map(() => Fraction.ZERO)
+  const currentPresses = new Array(buttonSets.length).fill(0)
   let best = Number.POSITIVE_INFINITY
+  let bestPresses: Array<number> | undefined
 
   function dfs(index: number, partialSum: number) {
     if (index === freeCount) {
+      const pivotAssignments: Array<{ col: number; value: number }> = []
       let total = partialSum
       for (let rowIdx = 0; rowIdx < pivotRows.length; rowIdx++) {
         const row = pivotRows[rowIdx]
@@ -494,30 +590,37 @@ function minPressesForJoltage(machine: Machine): number {
         if (value < 0 || value > bound) {
           return
         }
+        pivotAssignments.push({ col: row.pivotCol, value })
         total += value
       }
       if (total < best) {
+        const candidate = currentPresses.slice()
+        for (const assignment of pivotAssignments) {
+          candidate[assignment.col] = assignment.value
+        }
         best = total
+        bestPresses = candidate
       }
       return
     }
 
     const bound = freeBounds[index]
+    const column = orderedColumns[index]
     if (bound === 0) {
-      if (
-        pivotRows.every((row, rowIdx) => {
-          const minPossible = assignedContribution[rowIdx].add(
-            row.minSuffix[index + 1],
-          )
-          const maxPossible = assignedContribution[rowIdx].add(
-            row.maxSuffix[index + 1],
-          )
-          return (
-            maxPossible.compare(row.minAllowed) >= 0 &&
-            minPossible.compare(row.maxAllowed) <= 0
-          )
-        })
-      ) {
+      currentPresses[column] = 0
+      const constraintsSatisfied = pivotRows.every((row, rowIdx) => {
+        const minPossible = assignedContribution[rowIdx].add(
+          row.minSuffix[index + 1],
+        )
+        const maxPossible = assignedContribution[rowIdx].add(
+          row.maxSuffix[index + 1],
+        )
+        return (
+          maxPossible.compare(row.minAllowed) >= 0 &&
+          minPossible.compare(row.maxAllowed) <= 0
+        )
+      })
+      if (constraintsSatisfied) {
         dfs(index + 1, partialSum)
       }
       return
@@ -527,15 +630,18 @@ function minPressesForJoltage(machine: Machine): number {
     if (Number.isFinite(best)) {
       const remainingBudget = best - partialSum
       if (remainingBudget <= 0) {
+        currentPresses[column] = 0
         return
       }
       maxValue = Math.min(maxValue, remainingBudget - 1)
     }
     if (maxValue < 0) {
+      currentPresses[column] = 0
       return
     }
 
     for (let value = 0; value <= maxValue; value++) {
+      currentPresses[column] = value
       if (value > 0) {
         for (let rowIdx = 0; rowIdx < pivotRows.length; rowIdx++) {
           const coeff = pivotRows[rowIdx].coeffs[index]
@@ -580,30 +686,33 @@ function minPressesForJoltage(machine: Machine): number {
         }
       }
     }
+
+    currentPresses[column] = 0
   }
 
   dfs(0, 0)
 
-  if (!Number.isFinite(best)) {
+  if (!Number.isFinite(best) || bestPresses === undefined) {
     throw new Error('Failed to find minimal joltage configuration')
   }
 
-  return best
+  return {
+    totalPresses: best,
+    buttonPresses: bestPresses,
+  }
 }
 
-export async function solve(
-  input: string,
-): Promise<string | number | object> {
+export function solve(input: string): Promise<string | number | object> {
   const machines = parseInput(input)
 
   if (machines.length === 0) {
-    return {
+    return Promise.resolve({
       part1: 0,
       part2: 0,
       details: {
         machines: 0,
       },
-    }
+    })
   }
 
   let part1Total = 0
@@ -631,7 +740,7 @@ export async function solve(
       part1HardestMachine = idx + 1
     }
 
-    const joltagePresses = minPressesForJoltage(machine)
+    const { totalPresses: joltagePresses } = minPressesForJoltage(machine)
     part2Total += joltagePresses
     if (joltagePresses > part2HardestPresses) {
       part2HardestPresses = joltagePresses
@@ -639,7 +748,7 @@ export async function solve(
     }
   })
 
-  return {
+  return Promise.resolve({
     part1: part1Total,
     part2: part2Total,
     details: {
@@ -649,6 +758,6 @@ export async function solve(
       part2HardestMachine,
       part2HardestPresses,
     },
-  }
+  })
 }
 
