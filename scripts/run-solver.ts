@@ -2,24 +2,27 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { getSolver } from '../src/solvers'
 
-type Variant = 'input' | 'test'
-
-function parseArgs(): { day: string; variant: Variant } {
+function parseArgs(): { day: string; variant: string } {
   const [, , dayArg, variantArg] = process.argv
 
   if (!dayArg) {
     throw new Error('Usage: npm run solve -- <day> [input|test]')
   }
 
-  const normalizedVariant =
-    variantArg === 'test' || variantArg === 'input' ? variantArg : 'input'
+  const normalizedVariant = variantArg ?? 'input'
 
   return { day: dayArg, variant: normalizedVariant }
 }
 
-async function loadInput(day: string, variant: Variant): Promise<string> {
+function resolveVariantFilename(variant: string): string {
+  if (variant === 'input') return 'input'
+  if (variant === 'test') return 'test-input'
+  return variant
+}
+
+async function loadInput(day: string, variant: string): Promise<string> {
   const dayPadded = day.padStart(2, '0')
-  const filename = variant === 'test' ? 'test-input' : 'input'
+  const filename = resolveVariantFilename(variant)
   const inputPath = path.join(process.cwd(), 'src', 'inputs', `day${dayPadded}`, filename)
   return fs.readFile(inputPath, 'utf-8')
 }
