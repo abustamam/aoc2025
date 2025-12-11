@@ -135,46 +135,62 @@ function findValidPath(
   target: string,
   required: Array<string>,
 ): PathResult | null {
-  const requiredSet = new Set(required)
-  const path: Array<string> = []
-  const visiting = new Set<string>()
+  const requiredMaskByDevice = new Map<string, number>()
+  required.forEach((device, index) => {
+    requiredMaskByDevice.set(device, 1 << index)
+  })
+  const fullMask =
+    required.length === 0 ? 0 : (1 << required.length) - 1
 
-  function dfs(
-    node: string,
-    satisfied: Set<string>,
-  ): boolean {
-    path.push(node)
-    visiting.add(node)
-    const updatedSatisfied = new Set(satisfied)
-    if (requiredSet.has(node)) {
-      updatedSatisfied.add(node)
+  type State = { node: string; mask: number }
+  const encodeState = (node: string, mask: number) => `${node}|${mask}`
+
+  const startMask = requiredMaskByDevice.get(start) ?? 0
+  const startState: State = { node: start, mask: startMask }
+  const startKey = encodeState(startState.node, startState.mask)
+
+  const queue: Array<State> = [startState]
+  const visited = new Set<string>([startKey])
+  const parents = new Map<string, string>()
+  const stateByKey = new Map<string, State>([[startKey, startState]])
+
+  const buildPathResult = (finalKey: string): PathResult => {
+    const nodes: Array<string> = []
+    let key: string | undefined = finalKey
+    while (key) {
+      const state = stateByKey.get(key)
+      if (!state) break
+      nodes.push(state.node)
+      key = parents.get(key)
     }
-
-    if (node === target && updatedSatisfied.size === requiredSet.size) {
-      return true
+    nodes.reverse()
+    const edges: Array<[string, string]> = []
+    for (let i = 0; i < nodes.length - 1; i += 1) {
+      edges.push([nodes[i], nodes[i + 1]])
     }
-
-    for (const next of graph.get(node) ?? []) {
-      if (visiting.has(next)) {
-        continue
-      }
-      if (dfs(next, updatedSatisfied)) {
-        return true
-      }
-    }
-
-    path.pop()
-    visiting.delete(node)
-    return false
+    return { nodes, edges }
   }
 
-  const initialSatisfied = new Set<string>()
-  if (dfs(start, initialSatisfied)) {
-    const edges: Array<[string, string]> = []
-    for (let i = 0; i < path.length - 1; i += 1) {
-      edges.push([path[i], path[i + 1]])
+  for (let i = 0; i < queue.length; i += 1) {
+    const current = queue[i]
+    const currentKey = encodeState(current.node, current.mask)
+    if (current.node === target && current.mask === fullMask) {
+      return buildPathResult(currentKey)
     }
-    return { nodes: [...path], edges }
+
+    const outputs = graph.get(current.node) ?? []
+    for (const next of outputs) {
+      const nextMask = current.mask | (requiredMaskByDevice.get(next) ?? 0)
+      const nextKey = encodeState(next, nextMask)
+      if (visited.has(nextKey)) {
+        continue
+      }
+      visited.add(nextKey)
+      parents.set(nextKey, currentKey)
+      const nextState: State = { node: next, mask: nextMask }
+      stateByKey.set(nextKey, nextState)
+      queue.push(nextState)
+    }
   }
 
   return null
