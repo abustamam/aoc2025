@@ -9,6 +9,7 @@ import { Day07Visualization } from '../components/visualizations/Day07Visualizat
 import { Day08Visualization } from '../components/visualizations/Day08Visualization'
 import { Day09Visualization } from '../components/visualizations/Day09Visualization'
 import { Day10Visualization } from '../components/visualizations/Day10Visualization'
+import { Day11Visualization } from '../components/visualizations/Day11Visualization'
 import { checkVisualizationExists } from '../utils/visualizations'
 
 const getVisualizationData = createServerFn({ method: 'GET' })
@@ -68,6 +69,8 @@ function VisualizationPage() {
         return <Day09Visualization input={input} />
       case '10':
         return <Day10Visualization input={input} />
+      case '11':
+        return <Day11Visualization input={input} />
       default:
         return (
           <div className="text-white text-center py-8">

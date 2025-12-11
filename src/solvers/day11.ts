@@ -1,12 +1,12 @@
-type Graph = Map<string, Array<string>>
+export type Graph = Map<string, Array<string>>
 
-const PART1_START = 'you'
-const PART1_TARGET = 'out'
-const PART2_START = 'svr'
-const PART2_TARGET = 'out'
-const PART2_REQUIRED_DEVICES = ['dac', 'fft']
+export const PART1_START = 'you'
+export const PART1_TARGET = 'out'
+export const PART2_START = 'svr'
+export const PART2_TARGET = 'out'
+export const PART2_REQUIRED_DEVICES = ['dac', 'fft']
 
-function parseGraph(rawInput: string): Graph {
+export function parseGraph(rawInput: string): Graph {
   const graph: Graph = new Map()
 
   rawInput
@@ -38,7 +38,7 @@ function parseGraph(rawInput: string): Graph {
   return graph
 }
 
-function countPathsThroughDevices(
+export function countPathsThroughDevices(
   graph: Graph,
   start: string,
   target: string,
