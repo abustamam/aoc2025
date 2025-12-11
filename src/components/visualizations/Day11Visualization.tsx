@@ -24,6 +24,7 @@ type GraphLayout = {
   height: number
   nodes: Array<NodePosition>
   edges: Array<{ from: string; to: string }>
+  nodeLookup: Map<string, NodePosition>
 }
 
 type PathResult = {
@@ -126,7 +127,12 @@ function buildGraphLayout(graph: Graph, seeds: Array<string>): GraphLayout {
     outputs.forEach((to) => edges.push({ from, to }))
   })
 
-  return { width, height, nodes, edges }
+  const nodeLookup = new Map<string, NodePosition>()
+  nodes.forEach((node) => {
+    nodeLookup.set(node.id, node)
+  })
+
+  return { width, height, nodes, edges, nodeLookup }
 }
 
 function findValidPath(
@@ -135,46 +141,57 @@ function findValidPath(
   target: string,
   required: Array<string>,
 ): PathResult | null {
-  const requiredSet = new Set(required)
-  const path: Array<string> = []
-  const visiting = new Set<string>()
+  const requiredMaskByDevice = new Map<string, number>()
+  required.forEach((device, idx) => {
+    requiredMaskByDevice.set(device, 1 << idx)
+  })
+  const fullMask = required.length === 0 ? 0 : 2 ** required.length - 1
 
-  function dfs(
-    node: string,
-    satisfied: Set<string>,
-  ): boolean {
-    path.push(node)
-    visiting.add(node)
-    const updatedSatisfied = new Set(satisfied)
-    if (requiredSet.has(node)) {
-      updatedSatisfied.add(node)
+  const startMask = requiredMaskByDevice.get(start) ?? 0
+  const startKey = `${start}|${startMask}`
+  const queue: Array<{ node: string; mask: number; key: string }> = [
+    { node: start, mask: startMask, key: startKey },
+  ]
+  const visited = new Set<string>([startKey])
+  const parent = new Map<
+    string,
+    { prevKey: string | null; node: string; mask: number }
+  >()
+  parent.set(startKey, { prevKey: null, node: start, mask: startMask })
+
+  while (queue.length > 0) {
+    const { node, mask, key } = queue.shift()!
+
+    if (node === target && mask === fullMask) {
+      const nodes: Array<string> = []
+      let currentKey: string | null = key
+      while (currentKey) {
+        const entry = parent.get(currentKey)
+        if (!entry) {
+          break
+        }
+        nodes.push(entry.node)
+        currentKey = entry.prevKey
+      }
+      nodes.reverse()
+      const edges: Array<[string, string]> = []
+      for (let i = 0; i < nodes.length - 1; i += 1) {
+        edges.push([nodes[i], nodes[i + 1]])
+      }
+      return { nodes, edges }
     }
 
-    if (node === target && updatedSatisfied.size === requiredSet.size) {
-      return true
-    }
-
-    for (const next of graph.get(node) ?? []) {
-      if (visiting.has(next)) {
+    const outputs = graph.get(node) ?? []
+    for (const next of outputs) {
+      const nextMask = mask | (requiredMaskByDevice.get(next) ?? 0)
+      const nextKey = `${next}|${nextMask}`
+      if (visited.has(nextKey)) {
         continue
       }
-      if (dfs(next, updatedSatisfied)) {
-        return true
-      }
+      visited.add(nextKey)
+      parent.set(nextKey, { prevKey: key, node: next, mask: nextMask })
+      queue.push({ node: next, mask: nextMask, key: nextKey })
     }
-
-    path.pop()
-    visiting.delete(node)
-    return false
-  }
-
-  const initialSatisfied = new Set<string>()
-  if (dfs(start, initialSatisfied)) {
-    const edges: Array<[string, string]> = []
-    for (let i = 0; i < path.length - 1; i += 1) {
-      edges.push([path[i], path[i + 1]])
-    }
-    return { nodes: [...path], edges }
   }
 
   return null
@@ -276,6 +293,8 @@ export function Day11Visualization({ input }: { input: string }) {
       </div>
     )
   }
+
+  const getNodePosition = (id: string) => layout.nodeLookup.get(id)
 
   return (
     <div className="space-y-6 text-white">
@@ -416,8 +435,8 @@ export function Day11Visualization({ input }: { input: string }) {
 
             {/* Base edges */}
             {layout.edges.map((edge) => {
-              const from = layout.nodes.find((node) => node.id === edge.from)
-              const to = layout.nodes.find((node) => node.id === edge.to)
+              const from = getNodePosition(edge.from)
+              const to = getNodePosition(edge.to)
               if (!from || !to) return null
               return (
                 <line
@@ -436,8 +455,8 @@ export function Day11Visualization({ input }: { input: string }) {
             {/* Part 1 path overlay */}
             {part1Path &&
               part1Path.edges.map(([fromId, toId], idx) => {
-                const from = layout.nodes.find((node) => node.id === fromId)
-                const to = layout.nodes.find((node) => node.id === toId)
+                const from = getNodePosition(fromId)
+                const to = getNodePosition(toId)
                 if (!from || !to) return null
                 const isFocus = activePart === 1
                 return (
@@ -458,8 +477,8 @@ export function Day11Visualization({ input }: { input: string }) {
             {/* Part 2 path overlay */}
             {part2Path &&
               part2Path.edges.map(([fromId, toId], idx) => {
-                const from = layout.nodes.find((node) => node.id === fromId)
-                const to = layout.nodes.find((node) => node.id === toId)
+                const from = getNodePosition(fromId)
+                const to = getNodePosition(toId)
                 if (!from || !to) return null
                 const isFocus = activePart === 2
                 return (
